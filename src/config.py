@@ -51,3 +51,20 @@ LOAD_COLS = [
     'v501',   # marital status
     'v136',   # number of household members
 ]
+
+# Feature Columns (model inputs) 
+FEATURE_COLS = [
+    'maternal_age',
+    'education_yrs',
+    'wealth_score',
+    'birth_order',
+    'birth_interval',
+    'residence_type',
+    'region',
+    'anc_first_timing',   # m14 — month of first ANC visit
+    'iron_supplement',
+    'iron_days',
+    'tetanus_shots',
+    'marital_status',
+    'household_size',
+]
