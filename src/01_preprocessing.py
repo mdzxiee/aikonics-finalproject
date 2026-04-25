@@ -68,3 +68,5 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
       Treating them as numeric would introduce error into key features.
     """
     n0 = len(df)
+    df = df[df['b20'] >= GESTATIONAL_AGE_MIN].copy()
+    print(f"  [F1] Full-term (b20>={GESTATIONAL_AGE_MIN}): {len(df):,}  (-{n0-len(df):,})")
