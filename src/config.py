@@ -68,3 +68,19 @@ FEATURE_COLS = [
     'marital_status',
     'household_size',
 ]
+
+COL_RENAME = {
+    'v012': 'maternal_age',
+    'v133': 'education_yrs',
+    'v191': 'wealth_score',
+    'bord': 'birth_order',
+    'b11':  'birth_interval',
+    'v025': 'residence_type',
+    'v024': 'region',
+    'm14':  'anc_first_timing',  
+    'm45':  'iron_supplement',
+    'm46':  'iron_days',
+    'm1':   'tetanus_shots',
+    'v501': 'marital_status',
+    'v136': 'household_size',
+}
