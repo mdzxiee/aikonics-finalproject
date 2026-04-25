@@ -155,3 +155,7 @@ def drop_and_rename(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors='ignore')
     df = df.rename(columns=COL_RENAME)
     return df
+def validate_output(df: pd.DataFrame) -> None:
+    missing = [c for c in FEATURE_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing expected feature columns after preprocessing: {missing}")
