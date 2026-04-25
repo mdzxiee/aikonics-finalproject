@@ -41,28 +41,24 @@ def load_raw(path: str) -> pd.DataFrame:
     print(f"  [LOAD] Raw: {df.shape[0]:,} rows × {df.shape[1]} columns")
     return df
 
-# 2. Validity Filters 
+#  2. Validity Filters 
 def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     """
     4 sequential validity filters — each justified independently.
- 
     Filter 1 (b20 >= 9): Full-term births only.
       Preterm LBW is driven by gestational age, not maternal socioeconomic
       factors. Including preterm records teaches the model the wrong causal
       signal and would produce referrals for an outcome (gestational age)
       that BHWs cannot observe or influence in early prenatal visits.
- 
     Filter 2 (m19a == 1): Measured birth weights only.
       Recalled weights (m19a=2,3) have systematic maternal recall bias,
       particularly for older births. Unreliable ground truth degrades model
       calibration and inflates false-negative rates in evaluation.
- 
     Filter 3 (0 < m19 < 9000): Valid weight range.
       DHS codes 9,996 and 9,998 indicate non-response. Zero weights are
       recording errors. Values above 9,000g are biologically implausible.
- 
-    Filter 4 (Remove DHS special codes in m14, m45):
-      m14: 98 = "don't know", 99 = missing
+    Filter 4 (Remove DHS special codes in m13, m45):
+      m13: 98 = "don't know", 99 = missing
       m45:  8 = "don't know",  9 = missing
       These are survey non-response codes, not real clinical values.
       Treating them as numeric would introduce error into key features.
@@ -70,23 +66,18 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     n0 = len(df)
     df = df[df['b20'] >= GESTATIONAL_AGE_MIN].copy()
     print(f"  [F1] Full-term (b20>={GESTATIONAL_AGE_MIN}): {len(df):,}  (-{n0-len(df):,})")
-
     n1 = len(df)
     df = df[df['m19a'] == 1].copy()
     print(f"  [F2] Measured weight (m19a=1):              {len(df):,}  (-{n1-len(df):,})")
-
     n2 = len(df)
     df = df[df['m19'].notna() & (df['m19'] > 0) & (df['m19'] < WEIGHT_MAX_GRAMS)].copy()
     print(f"  [F3] Valid weight range:                    {len(df):,}  (-{n2-len(df):,})")
-
     n3 = len(df)
     df = df[~df['m13'].isin([98, 99])].copy()
     df = df[~df['m45'].isin([8, 9])].copy()
     print(f"  [F4] Remove DHS special codes:              {len(df):,}  (-{n3-len(df):,})")
-
     pct = len(df) / n0 * 100
     print(f"\n  [FILTER RESULT] {len(df):,} of {n0:,} retained ({pct:.1f}%)")
-
     if len(df) < 1000:
         raise ValueError(
             f"Only {len(df)} rows after filtering (minimum required: 1000). "
@@ -94,6 +85,7 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
         )
     return df
 
+#  3. Target Variable 
 def create_target(df: pd.DataFrame):
     df = df.copy()
     df['LBW_Risk'] = (df['m19'] < LBW_THRESHOLD_GRAMS).astype(int)
@@ -105,16 +97,27 @@ def create_target(df: pd.DataFrame):
     print(f"  [TARGET] Imbalance: {ratio:.2f}:1 → scale_pos_weight = {ratio:.1f}")
     return df, ratio
 
+#  4. Mother ID (Group Key) 
 def create_mother_id(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create unique mother identifier for GroupShuffleSplit and StratifiedGroupKFold.
+    NDHS Kids Recode has multiple birth records per mother (one per live birth
+    within 5 years). Row-level splitting allows the same mother in both training
+    and evaluation sets — this is data leakage because the model learns from
+    mother-specific context (household, wealth, education, region) and then
+    evaluates on another record from the SAME context.
+    mother_id = v001 (cluster) + v002 (household) + v003 (respondent line)
+    This triple is guaranteed unique per NDHS respondent across all birth records.
+    mother_id is used ONLY for group-based splitting. It is DROPPED before model
+    training. It is never a feature.
+    """
     df = df.copy()
     df['mother_id'] = (
         df['v001'].astype(str) + '_' +
         df['v002'].astype(str) + '_' +
         df['v003'].astype(str)
     )
-    return df
-
-n_mothers = df['mother_id'].nunique()
+    n_mothers = df['mother_id'].nunique()
     n_multi   = df[df.duplicated('mother_id', keep=False)]['mother_id'].nunique()
     print(f"\n  [GROUP] Unique mothers: {n_mothers:,}")
     print(f"  [GROUP] Mothers with multiple birth records: {n_multi:,}")
@@ -124,37 +127,86 @@ n_mothers = df['mother_id'].nunique()
               f"{n_multi} mothers would leak across splits without it.")
     return df
 
+#  5. DHS Special Code Cleaning 
 def clean_dhs_codes(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace DHS 'don't know' / missing codes with NaN before imputation."""
     df = df.copy()
+    # m46 > 270 days: DHS coded responses (e.g., 997 = "inconsistent")
     df['m46'] = pd.to_numeric(df['m46'], errors='coerce')
     df.loc[df['m46'] > 270, 'm46'] = np.nan
+
     df['m1']  = pd.to_numeric(df['m1'],  errors='coerce').replace([8, 9], np.nan)
     df['v501']= pd.to_numeric(df['v501'],errors='coerce').replace([9], np.nan)
     df['v136']= pd.to_numeric(df['v136'],errors='coerce').replace([99], np.nan)
     return df
 
+#  6. Structural Domain-Aware Imputation 
 def apply_structural_imputation(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply domain-grounded structural imputation BEFORE any pipeline or model.
+    These are NOT median imputations — they encode real-world causal logic.
+    iron_days (m46) — CONDITIONAL zero fill:
+      Fill with 0 ONLY when m45 != 1 (mother did NOT receive iron supplement).
+      A mother who did not receive iron has 0 iron days by definition.
+      If m45 == 1 (received iron) and m46 is still missing, leave as NaN for
+      XGBoost's native NaN handler.
+      DATA VERIFICATION: In PHKR82FL.csv, when m45==1, m46 is NEVER missing
+      (0 missing out of 1,208 cases). When m45!=1, m46 is ALWAYS missing
+      (1,792/1,792 cases). Therefore, the conditional and unconditional fills
+      produce IDENTICAL results on this dataset. The conditional version is
+      accepted because it is epistemically correct and robust to future data.
+    tetanus_shots (m1):
+      Fill with 0. Missing = no documented record = 0 injections.
+      Unlike iron_days, there is no conditioning variable to check.
+    birth_interval (b11) — STRUCTURAL zero for first-borns only:
+      Set b11 = 0 ONLY when bord == 1 (first birth).
+      There is no preceding birth for a first-born — the interval is
+      structurally undefined, not truly missing. Zero is the correct value.
+      NON-FIRST-BORNS: Leave missing b11 as NaN. In PHKR82FL.csv,
+      only 0.4% of bord=2 records have missing b11 (0% for bord>2).
+      XGBoost handles these NaN values natively via sparsity-aware splits.
+      DO NOT impute median — this would mask the (weak) missingness signal
+      and is inconsistent with our decision to remove SimpleImputer.
+    """
     df = df.copy()
 
-df.loc[(df['m45'] != 1) & df['m46'].isnull(), 'm46'] = 0.0
+    # iron_days: 0 only when mother did NOT receive iron supplement
+    df.loc[(df['m45'] != 1) & df['m46'].isnull(), 'm46'] = 0.0
     n_iron_zeroed = ((df['m45'] != 1) & (df['m46'] == 0.0)).sum()
     print(f"\n  [IMPUTE] iron_days → 0 for {n_iron_zeroed} non-supplement mothers")
-n_tet = df['m1'].isnull().sum()
+    iron_still_nan = df[(df['m45'] == 1) & df['m46'].isnull()].shape[0]
+    if iron_still_nan > 0:
+        print(f"  [IMPUTE] iron_days still NaN (m45=1): {iron_still_nan} → XGBoost handles")
+
+    # tetanus_shots: missing = 0 documented injections
+    n_tet = df['m1'].isnull().sum()
     df['m1'] = df['m1'].fillna(0.0)
     print(f"  [IMPUTE] tetanus_shots → 0 for {n_tet} records with no documentation")
 
-n_first = (df['bord'] == 1).sum()
+    # birth_interval: structural zero for first-borns only
+    n_first = (df['bord'] == 1).sum()
     df.loc[df['bord'] == 1, 'b11'] = 0.0
+    n_non_first_nan = df[(df['bord'] > 1) & df['b11'].isnull()].shape[0]
     print(f"  [IMPUTE] birth_interval → 0 for {n_first} first-borns (structural zero)")
-n_non_first_nan = df[(df['bord'] > 1) & df['b11'].isnull()].shape[0]
     if n_non_first_nan > 0:
         print(f"  [IMPUTE] birth_interval NaN for non-first-borns: {n_non_first_nan} → XGBoost handles")
+    else:
+        print(f"  [IMPUTE] birth_interval: 0 non-first-borns with missing b11")
     return df
+
+# 7. Drop Filter Columns and Rename 
 def drop_and_rename(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Drop: m19 (target source), m19a (filter), b20 (filter), m14 (excluded)
+    Keep: mother_id, v001, v002, v003 (needed for splitting in 04)
+    Rename: NDHS codes → readable names per COL_RENAME
+    """
     drop_cols = ['m19', 'm19a', 'b20', 'm14']
     df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors='ignore')
     df = df.rename(columns=COL_RENAME)
     return df
+
+# 8. Validate Output 
 def validate_output(df: pd.DataFrame) -> None:
     missing = [c for c in FEATURE_COLS if c not in df.columns]
     if missing:
@@ -165,12 +217,17 @@ def validate_output(df: pd.DataFrame) -> None:
     if len(remaining) > 0:
         print(f"  [VALIDATE] Remaining NaN (handled by XGBoost natively):")
         for col, pct in remaining.items():
-            print(f"               {col:<25} {pct:.2f}% NaN")
+            print(f"             {col:<25} {pct:.2f}% NaN")
+    else:
+        print(f"  [VALIDATE] No remaining NaN in feature columns ✓")
 
-            def run_preprocessing() -> pd.DataFrame:
+#  9. Main Execution
+def run_preprocessing() -> pd.DataFrame:
+
     print("=" * 65)
     print("STAGE 1: DATA LOADING AND PREPROCESSING")
     print("=" * 65)
+
     df = load_raw(RAW_DATA_PATH)
     df = apply_filters(df)
     df, imbalance_ratio = create_target(df)
@@ -179,11 +236,15 @@ def validate_output(df: pd.DataFrame) -> None:
     df = apply_structural_imputation(df)
     df = drop_and_rename(df)
     validate_output(df)
+
+    print(f"\n  [OUTPUT] Final shape: {df.shape}")
+    print(f"  [OUTPUT] Columns: {list(df.columns)}")
+    
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
     joblib.dump({'df': df, 'imbalance_ratio': imbalance_ratio}, PREPROCESSED)
     print(f"\n  [SAVED] {PREPROCESSED}")
     return df
-print(f"\n  [OUTPUT] Final shape: {df.shape}")
-    print(f"  [OUTPUT] Columns: {list(df.columns)}")
+
 if __name__ == "__main__":
     run_preprocessing()
+
