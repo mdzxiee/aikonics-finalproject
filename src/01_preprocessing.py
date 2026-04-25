@@ -104,3 +104,12 @@ def create_target(df: pd.DataFrame):
     print(f"  [TARGET] Normal (0): {n_norm:,} ({n_norm/len(df)*100:.1f}%)")
     print(f"  [TARGET] Imbalance: {ratio:.2f}:1 → scale_pos_weight = {ratio:.1f}")
     return df, ratio
+
+def create_mother_id(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df['mother_id'] = (
+        df['v001'].astype(str) + '_' +
+        df['v002'].astype(str) + '_' +
+        df['v003'].astype(str)
+    )
+    return df
