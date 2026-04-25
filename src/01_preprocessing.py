@@ -173,3 +173,5 @@ def validate_output(df: pd.DataFrame) -> None:
     print("=" * 65)
     df = load_raw(RAW_DATA_PATH)
     df = apply_filters(df)
+    df, imbalance_ratio = create_target(df)
+    df = create_mother_id(df)
