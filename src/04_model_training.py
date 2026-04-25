@@ -105,3 +105,10 @@ def generate_oof_probabilities(X_train: pd.DataFrame, y_train: pd.Series,
         fold_aucs.append(fold_auc)
         best_it = fold_model.best_iteration
         print(f"    Fold {fold_n:2d}: AUC={fold_auc:.4f} | best_iter={best_it}")
+
+        mean_oof_auc = roc_auc_score(y_train, oof)
+    print(f"\n  [CV] OOF ROC-AUC: {mean_oof_auc:.4f}")
+    print(f"  [CV] Mean fold AUC: {np.mean(fold_aucs):.4f} ± {np.std(fold_aucs):.4f}")
+    print(f"  [CV] Avg best n_estimators across folds: {np.mean([]):.0f}")
+
+    return oof
