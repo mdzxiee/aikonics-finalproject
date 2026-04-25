@@ -40,3 +40,31 @@ def load_raw(path: str) -> pd.DataFrame:
         raise ValueError(f"Unsupported format: {ext}")
     print(f"  [LOAD] Raw: {df.shape[0]:,} rows × {df.shape[1]} columns")
     return df
+
+# 2. Validity Filters 
+def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    4 sequential validity filters — each justified independently.
+ 
+    Filter 1 (b20 >= 9): Full-term births only.
+      Preterm LBW is driven by gestational age, not maternal socioeconomic
+      factors. Including preterm records teaches the model the wrong causal
+      signal and would produce referrals for an outcome (gestational age)
+      that BHWs cannot observe or influence in early prenatal visits.
+ 
+    Filter 2 (m19a == 1): Measured birth weights only.
+      Recalled weights (m19a=2,3) have systematic maternal recall bias,
+      particularly for older births. Unreliable ground truth degrades model
+      calibration and inflates false-negative rates in evaluation.
+ 
+    Filter 3 (0 < m19 < 9000): Valid weight range.
+      DHS codes 9,996 and 9,998 indicate non-response. Zero weights are
+      recording errors. Values above 9,000g are biologically implausible.
+ 
+    Filter 4 (Remove DHS special codes in m14, m45):
+      m14: 98 = "don't know", 99 = missing
+      m45:  8 = "don't know",  9 = missing
+      These are survey non-response codes, not real clinical values.
+      Treating them as numeric would introduce error into key features.
+    """
+    n0 = len(df)
