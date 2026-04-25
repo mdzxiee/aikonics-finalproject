@@ -112,3 +112,25 @@ def generate_oof_probabilities(X_train: pd.DataFrame, y_train: pd.Series,
     print(f"  [CV] Avg best n_estimators across folds: {np.mean([]):.0f}")
 
     return oof
+
+# 3. Final Model Training with Early Stopping 
+
+def train_final_model(X_train: pd.DataFrame, y_train: pd.Series,
+                      g_train: pd.Series, xgb_params: dict) -> XGBClassifier:
+    """
+    Train final XGBClassifier on full training set with early stopping.
+    """
+    # Hold out 10% of training for early stopping via GroupShuffleSplit
+    gss = GroupShuffleSplit(n_splits=1, test_size=ES_VALIDATION_FRAC, 
+                            random_state=RANDOM_STATE)
+    tr_idx, es_idx = next(gss.split(X_train, y_train, groups=g_train))
+
+    X_tr, y_tr = X_train.iloc[tr_idx], y_train.iloc[tr_idx]
+    X_es, y_es = X_train.iloc[es_idx], y_train.iloc[es_idx]
+    
+    # Optional sanity check for early stopping leakage
+    g_tr, g_es = g_train.iloc[tr_idx], g_train.iloc[es_idx]
+    assert len(set(g_tr) & set(g_es)) == 0, "LEAKAGE in Early Stopping split!"
+
+    print(f"\n  [FINAL] Early stopping validation: {len(X_es):,} rows from training")
+    print(f"  [FINAL] Actual training rows: {len(X_tr):,}")
