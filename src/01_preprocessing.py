@@ -185,3 +185,5 @@ def validate_output(df: pd.DataFrame) -> None:
     return df
 print(f"\n  [OUTPUT] Final shape: {df.shape}")
     print(f"  [OUTPUT] Columns: {list(df.columns)}")
+if __name__ == "__main__":
+    run_preprocessing()
