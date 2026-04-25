@@ -132,3 +132,6 @@ def clean_dhs_codes(df: pd.DataFrame) -> pd.DataFrame:
     df['v501']= pd.to_numeric(df['v501'],errors='coerce').replace([9], np.nan)
     df['v136']= pd.to_numeric(df['v136'],errors='coerce').replace([99], np.nan)
     return df
+
+def apply_structural_imputation(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
