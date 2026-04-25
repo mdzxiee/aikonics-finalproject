@@ -177,3 +177,5 @@ def validate_output(df: pd.DataFrame) -> None:
     df = create_mother_id(df)
     df = clean_dhs_codes(df)
     df = apply_structural_imputation(df)
+    df = drop_and_rename(df)
+    validate_output(df)
