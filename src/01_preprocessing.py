@@ -150,3 +150,8 @@ n_non_first_nan = df[(df['bord'] > 1) & df['b11'].isnull()].shape[0]
     if n_non_first_nan > 0:
         print(f"  [IMPUTE] birth_interval NaN for non-first-borns: {n_non_first_nan} → XGBoost handles")
     return df
+def drop_and_rename(df: pd.DataFrame) -> pd.DataFrame:
+    drop_cols = ['m19', 'm19a', 'b20', 'm14']
+    df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors='ignore')
+    df = df.rename(columns=COL_RENAME)
+    return df
