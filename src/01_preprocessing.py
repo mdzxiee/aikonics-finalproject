@@ -22,3 +22,9 @@ import joblib
 
 warnings.filterwarnings('ignore')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from config import (
+    RAW_DATA_PATH, ARTIFACTS_DIR, PREPROCESSED,
+    LOAD_COLS, COL_RENAME, FEATURE_COLS,
+    GESTATIONAL_AGE_MIN, WEIGHT_MAX_GRAMS, LBW_THRESHOLD_GRAMS,
+)
