@@ -28,3 +28,15 @@ from config import (
     LOAD_COLS, COL_RENAME, FEATURE_COLS,
     GESTATIONAL_AGE_MIN, WEIGHT_MAX_GRAMS, LBW_THRESHOLD_GRAMS,
 )
+
+# 1. Load 
+def load_raw(path: str) -> pd.DataFrame:
+    ext = os.path.splitext(path)[1].lower()
+    if ext == '.csv':
+        df = pd.read_csv(path, usecols=LOAD_COLS, low_memory=False)
+    elif ext in ('.xlsx', '.xls'):
+        df = pd.read_excel(path, usecols=LOAD_COLS)
+    else:
+        raise ValueError(f"Unsupported format: {ext}")
+    print(f"  [LOAD] Raw: {df.shape[0]:,} rows × {df.shape[1]} columns")
+    return df
