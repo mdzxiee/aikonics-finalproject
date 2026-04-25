@@ -183,3 +183,23 @@ def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
                 dpi=150, bbox_inches='tight')
     plt.close()
     print("  [SAVED] eda_class_comparison.png")
+
+    #  Main 
+def run_eda() -> None:
+    print("=" * 65)
+    print("STAGE 2: EXPLORATORY DATA ANALYSIS (TRAINING SET ONLY)")
+    print("=" * 65)
+    print("\n  Loading training data only — test/unseen remain sealed.")
+
+    if not os.path.exists(X_TRAIN_PATH):
+        raise FileNotFoundError(
+            f"X_train.csv not found at {X_TRAIN_PATH}.\n"
+            "Run 04_model_training.py first to produce the training split."
+        )
+
+    X_train = pd.read_csv(X_TRAIN_PATH)
+    y_train = pd.read_csv(Y_TRAIN_PATH).squeeze()
+
+    print(f"  Training rows: {len(X_train):,} | LBW rate: {y_train.mean()*100:.1f}%")
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
