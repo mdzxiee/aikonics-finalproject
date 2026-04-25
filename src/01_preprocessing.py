@@ -83,3 +83,13 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     df = df[~df['m13'].isin([98, 99])].copy()
     df = df[~df['m45'].isin([8, 9])].copy()
     print(f"  [F4] Remove DHS special codes:              {len(df):,}  (-{n3-len(df):,})")
+
+    pct = len(df) / n0 * 100
+    print(f"\n  [FILTER RESULT] {len(df):,} of {n0:,} retained ({pct:.1f}%)")
+
+    if len(df) < 1000:
+        raise ValueError(
+            f"Only {len(df)} rows after filtering (minimum required: 1000). "
+            "Verify data path and filter logic."
+        )
+    return df
