@@ -74,3 +74,7 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     n1 = len(df)
     df = df[df['m19a'] == 1].copy()
     print(f"  [F2] Measured weight (m19a=1):              {len(df):,}  (-{n1-len(df):,})")
+
+    n2 = len(df)
+    df = df[df['m19'].notna() & (df['m19'] > 0) & (df['m19'] < WEIGHT_MAX_GRAMS)].copy()
+    print(f"  [F3] Valid weight range:                    {len(df):,}  (-{n2-len(df):,})")
