@@ -190,3 +190,38 @@ def run_model_training() -> None:
     print(f"\n  [CONFIG] scale_pos_weight = {spw} (dynamic from ratio={imbalance_ratio:.2f}:1)")
     print(f"  [CONFIG] eval_metric = aucpr (PR-AUC monitoring, not logloss)")
     print(f"  [CONFIG] No SimpleImputer — XGBoost handles NaN natively")
+
+    # Split
+    X_train, X_test, X_unseen, y_train, y_test, y_unseen, g_train, g_test = \
+        group_based_split(df)
+
+    # Save 6 CSVs immediately after splitting
+    save_splits_as_csv(X_train, X_test, X_unseen, y_train, y_test, y_unseen)
+
+    # OOF probabilities via StratifiedGroupKFold CV
+    oof_proba = generate_oof_probabilities(
+        X_train, y_train, g_train, xgb_params
+    )
+
+    # Train final model on full training set
+    final_model = train_final_model(X_train, y_train, g_train, xgb_params)
+
+    # Save model artifact
+    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+    joblib.dump(final_model, MODEL_PATH)
+    print(f"\n  [SAVED] model.pkl → {MODEL_PATH}")
+
+    # Save OOF probabilities for threshold selection
+    joblib.dump({'oof_proba': oof_proba, 'y_train': y_train}, OOF_PATH)
+    print(f"  [SAVED] oof_probabilities.pkl → {OOF_PATH}")
+
+    # Save split data for evaluation
+    split_path = os.path.join(ARTIFACTS_DIR, "split_data.pkl")
+    joblib.dump({
+        'X_train': X_train, 'y_train': y_train,
+        'X_test':  X_test,  'y_test':  y_test,
+        'X_unseen':X_unseen,'y_unseen':y_unseen,
+    }, split_path)
+    print(f"  [SAVED] split_data.pkl → {split_path}")
+
+    print(f"\n  [NEXT] Run 05_threshold_validation.py to select and save threshold.")
