@@ -179,3 +179,7 @@ def validate_output(df: pd.DataFrame) -> None:
     df = apply_structural_imputation(df)
     df = drop_and_rename(df)
     validate_output(df)
+    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+    joblib.dump({'df': df, 'imbalance_ratio': imbalance_ratio}, PREPROCESSED)
+    print(f"\n  [SAVED] {PREPROCESSED}")
+    return df
