@@ -51,3 +51,15 @@ def group_based_split(df: pd.DataFrame):
     g_train  = g_main.iloc[tr_idx]
     g_test   = g_main.iloc[te_idx]
     g_unseen = g.iloc[unseen_idx]
+
+    # Verify zero mother-level overlap (assertion — will raise on leakage)
+    assert len(set(g_train) & set(g_test))   == 0, "LEAKAGE: Train-Test overlap!"
+    assert len(set(g_train) & set(g_unseen)) == 0, "LEAKAGE: Train-Unseen overlap!"
+    assert len(set(g_test)  & set(g_unseen)) == 0, "LEAKAGE: Test-Unseen overlap!"
+
+    print(f"\n  [SPLIT] Mother-level GroupShuffleSplit — VERIFIED LEAK-FREE")
+    print(f"  Training set  : {len(X_train):,} rows | {len(g_train.unique()):,} mothers | LBW: {y_train.mean()*100:.1f}%")
+    print(f"  Test set      : {len(X_test):,}  rows | {len(g_test.unique()):,} mothers | LBW: {y_test.mean()*100:.1f}%")
+    print(f"  Unseen holdout: {len(X_unseen):,}  rows | {len(g_unseen.unique()):,} mothers | LBW: {y_unseen.mean()*100:.1f}%")
+
+    return X_train, X_test, X_unseen, y_train, y_test, y_unseen, g_train, g_test
