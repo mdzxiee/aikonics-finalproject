@@ -166,3 +166,8 @@ def validate_output(df: pd.DataFrame) -> None:
         print(f"  [VALIDATE] Remaining NaN (handled by XGBoost natively):")
         for col, pct in remaining.items():
             print(f"               {col:<25} {pct:.2f}% NaN")
+
+            def run_preprocessing() -> pd.DataFrame:
+    print("=" * 65)
+    print("STAGE 1: DATA LOADING AND PREPROCESSING")
+    print("=" * 65)
