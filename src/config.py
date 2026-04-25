@@ -31,3 +31,23 @@ FEATURES_PATH  = os.path.join(ARTIFACTS_DIR, "features.json")
 OOF_PATH       = os.path.join(ARTIFACTS_DIR, "oof_probabilities.pkl")
 PREPROCESSED   = os.path.join(ARTIFACTS_DIR, "preprocessed.pkl")
 DB_PATH        = os.path.join(DB_DIR, "aikonic.db")
+
+# Column Loading 
+# v001, v002, v003 are loaded for GroupShuffleSplit only — dropped before modeling
+LOAD_COLS = [
+    'v001', 'v002', 'v003',     # Mother identifier (group key, NOT features)
+    'm19', 'm19a', 'b20',       # Target + validity filters (dropped after use)
+    'v012',   # maternal age
+    'v133',   # education years
+    'v191',   # wealth index score (continuous)
+    'bord',   # birth order
+    'b11',    # preceding birth interval (months)
+    'v025',   # residence type: 1=urban, 2=rural
+    'v024',   # region code
+    'm14',    # month of FIRST ANC visit (0=no ANC, 1-9=month)
+    'm45',    # received iron supplementation: 1=yes, 0=no
+    'm46',    # days took iron supplements
+    'm1',     # tetanus toxoid injections received
+    'v501',   # marital status
+    'v136',   # number of household members
+]
