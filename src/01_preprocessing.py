@@ -139,3 +139,6 @@ def apply_structural_imputation(df: pd.DataFrame) -> pd.DataFrame:
 df.loc[(df['m45'] != 1) & df['m46'].isnull(), 'm46'] = 0.0
     n_iron_zeroed = ((df['m45'] != 1) & (df['m46'] == 0.0)).sum()
     print(f"\n  [IMPUTE] iron_days → 0 for {n_iron_zeroed} non-supplement mothers")
+n_tet = df['m1'].isnull().sum()
+    df['m1'] = df['m1'].fillna(0.0)
+    print(f"  [IMPUTE] tetanus_shots → 0 for {n_tet} records with no documentation")
