@@ -153,3 +153,21 @@ def train_final_model(X_train: pd.DataFrame, y_train: pd.Series,
     gap = train_auc - es_val_auc
     print(f"  [FINAL] Train-ESval gap: {gap:.4f} {'(acceptable)' if gap < 0.10 else '(⚠ high — consider more regularization)'}")
     return model
+
+# 4. Save Outputs 
+
+def save_splits_as_csv(X_train, X_test, X_unseen,
+                        y_train, y_test, y_unseen) -> None:
+    """
+    Export all 6 split CSVs for transparency and interoperability.
+    """
+    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+    X_train.to_csv(X_TRAIN_PATH,   index=False)
+    y_train.to_csv(Y_TRAIN_PATH,   index=False, header=True)
+    X_test.to_csv(X_TEST_PATH,     index=False)
+    y_test.to_csv(Y_TEST_PATH,     index=False, header=True)
+    X_unseen.to_csv(X_UNSEEN_PATH, index=False)
+    y_unseen.to_csv(Y_UNSEEN_PATH, index=False, header=True)
+    print(f"\n  [SAVED] 6 split CSVs → {ARTIFACTS_DIR}")
+    for name, df in [('X_train', X_train), ('X_test', X_test), ('X_unseen', X_unseen)]:
+        print(f"          {name}: {df.shape}")
