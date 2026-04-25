@@ -134,3 +134,22 @@ def train_final_model(X_train: pd.DataFrame, y_train: pd.Series,
 
     print(f"\n  [FINAL] Early stopping validation: {len(X_es):,} rows from training")
     print(f"  [FINAL] Actual training rows: {len(X_tr):,}")
+
+    model = XGBClassifier(**xgb_params)
+    model.fit(
+        X_tr, y_tr,
+        eval_set=[(X_es, y_es)],
+        early_stopping_rounds=EARLY_STOPPING_ROUNDS,
+        verbose=False
+    )
+
+    best_it      = model.best_iteration
+    train_auc    = roc_auc_score(y_tr, model.predict_proba(X_tr)[:, 1])
+    es_val_auc   = roc_auc_score(y_es, model.predict_proba(X_es)[:, 1])
+
+    print(f"  [FINAL] Best iteration (early stopping): {best_it}")
+    print(f"  [FINAL] Train AUC (optimistic upper bound): {train_auc:.4f}")
+    print(f"  [FINAL] ES-val AUC: {es_val_auc:.4f}")
+    gap = train_auc - es_val_auc
+    print(f"  [FINAL] Train-ESval gap: {gap:.4f} {'(acceptable)' if gap < 0.10 else '(⚠ high — consider more regularization)'}")
+    return model
