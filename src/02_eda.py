@@ -203,3 +203,20 @@ def run_eda() -> None:
     print(f"  Training rows: {len(X_train):,} | LBW rate: {y_train.mean()*100:.1f}%")
 
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    missing_value_report(X_train)
+    class_distribution_report(y_train)
+    feat_stats = compute_rq1_feature_metrics(X_train, y_train)
+
+    feat_stats.to_csv(os.path.join(OUTPUTS_DIR, 'feature_auc_train.csv'), index=False)
+    print(f"\n  [SAVED] feature_auc_train.csv  (RQ1 evidence)")
+
+    plot_distributions(X_train, y_train)
+    plot_class_comparison(X_train, y_train)
+
+    print("\n  [EDA COMPLETE] All outputs saved to outputs/")
+    print("  NOTE: These statistics are computed on TRAINING DATA ONLY.")
+    print("  They justify feature selection decisions without using test/unseen data.")
+
+
+if __name__ == "__main__":
+    run_eda()
