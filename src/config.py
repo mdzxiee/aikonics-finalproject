@@ -132,3 +132,33 @@ XGB_PARAMS = {
     'n_jobs':            -1,
     # scale_pos_weight: set dynamically (n_neg / n_pos) in 04_model_training.py
 }
+
+# Threshold Selection 
+MIN_RECALL_FLOOR = 0.50   # minimum acceptable recall on OOF probabilities
+
+# Layer 2 Clinical Thresholds (WHO/DOH) 
+CLINICAL_THRESHOLDS = {
+    'bp_systolic_critical':  140,    # WHO 2023: hypertension in pregnancy
+    'bp_diastolic_critical':  90,
+    'bp_systolic_warning':   130,
+    'bp_diastolic_warning':   80,
+    'muac_critical_cm':      23.5,   # DOH/WHO: maternal undernutrition
+    'muac_warning_cm':       25.0,
+}
+
+# NDHS Realistic Ranges (for 09_database_seed.py) 
+NDHS_RANGES = {
+    'maternal_age':     (15, 49),   # DHS eligible age range
+    'education_yrs':    (0, 18),
+    'wealth_score':     (-2.5, 4.0),
+    'birth_order':      (1, 10),
+    'birth_interval':   (0, 120),   # 0 = first-born
+    'residence_type':   (1, 2),
+    'region':           (1, 17),
+    'anc_first_timing': (0, 9),     # 0=no ANC, 1-9=month of first visit
+    'iron_supplement':  (0, 1),
+    'iron_days':        (0, 270),
+    'tetanus_shots':    (0, 7),
+    'marital_status':   (0, 5),
+    'household_size':   (1, 20),
+}
