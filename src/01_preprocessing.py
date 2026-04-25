@@ -123,3 +123,12 @@ n_mothers = df['mother_id'].nunique()
         print(f"  [GROUP] ⚠  GroupShuffleSplit REQUIRED — "
               f"{n_multi} mothers would leak across splits without it.")
     return df
+
+def clean_dhs_codes(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df['m46'] = pd.to_numeric(df['m46'], errors='coerce')
+    df.loc[df['m46'] > 270, 'm46'] = np.nan
+    df['m1']  = pd.to_numeric(df['m1'],  errors='coerce').replace([8, 9], np.nan)
+    df['v501']= pd.to_numeric(df['v501'],errors='coerce').replace([9], np.nan)
+    df['v136']= pd.to_numeric(df['v136'],errors='coerce').replace([99], np.nan)
+    return df
