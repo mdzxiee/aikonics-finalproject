@@ -70,3 +70,7 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     n0 = len(df)
     df = df[df['b20'] >= GESTATIONAL_AGE_MIN].copy()
     print(f"  [F1] Full-term (b20>={GESTATIONAL_AGE_MIN}): {len(df):,}  (-{n0-len(df):,})")
+
+    n1 = len(df)
+    df = df[df['m19a'] == 1].copy()
+    print(f"  [F2] Measured weight (m19a=1):              {len(df):,}  (-{n1-len(df):,})")
