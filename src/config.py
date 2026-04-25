@@ -49,7 +49,7 @@ LOAD_COLS = [
     'b11',     # preceding birth interval in months (0 = first-born structural zero)
     'v025',    # residence type: 1=urban, 2=rural
     'v024',    # region code (1–17, all Philippine regions)
-    'm14',     # month of first ANC visit: 0=no ANC, 1–20=weeks (98/99=DK → filter)
+    'm13',     # month of first ANC visit: 0=no ANC, 1–20=weeks (98/99=DK → filter)
     'm45',     # iron supplementation: 1=yes, 0=no (8=DK → filter out)
     'm46',     # days took iron supplements (0–270; >270=DHS code → NaN)
     'm1',      # tetanus toxoid injections (0–7; 8/9=DK → NaN)
@@ -66,7 +66,7 @@ FEATURE_COLS = [
     'birth_interval',     # 0 for first-borns (structural zero, not missing)
     'residence_type',
     'region',
-    'anc_first_timing',   # m14: 0=no ANC, 1–9=month of first visit
+    'anc_first_timing',   # m13: 0=no ANC, 1–9=month of first visit
     'iron_supplement',
     'iron_days',          # 0 if iron_supplement != 1
     'tetanus_shots',
@@ -82,7 +82,7 @@ COL_RENAME = {
     'b11':  'birth_interval',
     'v025': 'residence_type',
     'v024': 'region',
-    'm14':  'anc_first_timing',
+    'm13':  'anc_first_timing',
     'm45':  'iron_supplement',
     'm46':  'iron_days',
     'm1':   'tetanus_shots',
