@@ -171,3 +171,5 @@ def validate_output(df: pd.DataFrame) -> None:
     print("=" * 65)
     print("STAGE 1: DATA LOADING AND PREPROCESSING")
     print("=" * 65)
+    df = load_raw(RAW_DATA_PATH)
+    df = apply_filters(df)
