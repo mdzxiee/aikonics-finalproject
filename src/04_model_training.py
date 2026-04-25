@@ -19,3 +19,22 @@ from sklearn.model_selection import (
 )
 from sklearn.metrics import roc_auc_score
 from xgboost import XGBClassifier
+
+# 1. Group-Based Splitting 
+
+def group_based_split(df: pd.DataFrame):
+    """
+    Split into train / test / unseen with guaranteed mother-level separation.
+    """
+    X = df[FEATURE_COLS]
+    y = df['LBW_Risk']
+    g = df['mother_id']
+
+    # Step 1: Hold out unseen (sealed)
+    gss1 = GroupShuffleSplit(n_splits=1, test_size=UNSEEN_FRAC,
+                              random_state=RANDOM_STATE)
+    main_idx, unseen_idx = next(gss1.split(X, y, groups=g))
+
+    X_main, y_main, g_main = X.iloc[main_idx], y.iloc[main_idx], g.iloc[main_idx]
+    X_unseen = X.iloc[unseen_idx].reset_index(drop=True)
+    y_unseen = y.iloc[unseen_idx].reset_index(drop=True)
