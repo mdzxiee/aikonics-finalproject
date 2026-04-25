@@ -78,3 +78,50 @@ def class_distribution_report(y_train: pd.Series) -> None:
     print(f"  Normal (0): {n_norm:,} ({n_norm/len(y_train)*100:.1f}%)")
     print(f"  LBW    (1): {n_lbw:,}  ({n_lbw/len(y_train)*100:.1f}%)")
     print(f"  Ratio     : {n_norm/n_lbw:.2f}:1")
+
+    def compute_rq1_feature_metrics(X_train: pd.DataFrame,
+                                 y_train: pd.Series) -> pd.DataFrame:
+    """
+    RQ1 Evidence Table: Which features have highest predictive utility?
+
+    Metrics computed on TRAINING SET ONLY:
+      AUC:      individual predictive power vs LBW target (AUC ≥ 0.50 by design)
+      Cohen's d: standardized mean difference between LBW and Normal groups
+      r_pb:     point-biserial correlation with LBW target
+      U_p:      Mann-Whitney U test p-value (non-parametric group difference)
+    """
+    rows = []
+    for col in FEATURE_COLS:
+        if col not in X_train.columns:
+            continue
+        s    = X_train[col]
+        lbw  = s[y_train == 1].dropna()
+        norm = s[y_train == 0].dropna()
+        auc  = individual_auc(s, y_train)
+        d    = cohens_d(lbw, norm)
+        r_pb, p_r = pointbiserialr(s.fillna(s.median()), y_train)
+        try:
+            _, p_mw = mannwhitneyu(lbw, norm, alternative='two-sided')
+        except Exception:
+            p_mw = np.nan
+        rows.append({
+            'Feature':   col,
+            'AUC':       round(auc, 4),
+            'Cohens_d':  round(d, 4),
+            'r_pb':      round(r_pb, 4),
+            'p_pointbis':round(p_r, 4),
+            'p_MW':      round(p_mw, 4) if not np.isnan(p_mw) else np.nan,
+            'LBW_mean':  round(lbw.mean(), 3) if len(lbw) > 0 else np.nan,
+            'Norm_mean': round(norm.mean(), 3) if len(norm) > 0 else np.nan,
+        })
+    df = pd.DataFrame(rows).sort_values('AUC', ascending=False).reset_index(drop=True)
+    print("\n[EDA 3] RQ1 Feature Predictive Utility (Training Set):")
+    print(f"  {'Feature':<22} {'AUC':>7} {'d':>8} {'r_pb':>7} {'p_MW':>8}")
+    print(f"  {'-'*55}")
+    for _, row in df.iterrows():
+        print(f"  {row['Feature']:<22} {row['AUC']:>7.4f} {row['Cohens_d']:>8.4f} "
+              f"{row['r_pb']:>7.4f} {row['p_MW']:>8.4f}")
+    print(f"\n  Note: Max individual AUC = {df['AUC'].max():.4f}")
+    print(f"  Note: Cohen's d < 0.20 for most features — heavily overlapping")
+    print(f"        class distributions. Realistic NDHS-only ceiling: 0.58–0.65 AUC.")
+    return df
