@@ -63,3 +63,18 @@ def group_based_split(df: pd.DataFrame):
     print(f"  Unseen holdout: {len(X_unseen):,}  rows | {len(g_unseen.unique()):,} mothers | LBW: {y_unseen.mean()*100:.1f}%")
 
     return X_train, X_test, X_unseen, y_train, y_test, y_unseen, g_train, g_test
+
+# 2. CV with StratifiedGroupKFold (OOF Probabilities) 
+
+def generate_oof_probabilities(X_train: pd.DataFrame, y_train: pd.Series,
+                                g_train: pd.Series, xgb_params: dict) -> np.ndarray:
+    """
+    Generate out-of-fold (OOF) probabilities using StratifiedGroupKFold.
+    """
+    sgkf     = StratifiedGroupKFold(n_splits=CV_FOLDS, shuffle=True,
+                                     random_state=RANDOM_STATE)
+    oof      = np.zeros(len(X_train))
+    fold_aucs = []
+
+    print(f"\n  [CV] {CV_FOLDS}-fold StratifiedGroupKFold — mother-level separation")
+    print(f"  [CV] Early stopping: {EARLY_STOPPING_ROUNDS} rounds, eval_metric=aucpr")
