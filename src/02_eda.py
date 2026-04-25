@@ -53,3 +53,28 @@ def individual_auc(series: pd.Series, y: pd.Series) -> float:
     s = series.fillna(series.median())
     auc = roc_auc_score(y, s)
     return max(auc, 1 - auc)
+
+#  Analysis Functions 
+
+def missing_value_report(X_train: pd.DataFrame) -> None:
+    print("\n[EDA 1] Missing Value Report (Training Set Only):")
+    null_df = pd.DataFrame({
+        'Feature':  X_train.columns,
+        'Missing_N': X_train.isnull().sum().values,
+        'Missing_%': (X_train.isnull().mean() * 100).round(2).values,
+    }).sort_values('Missing_%', ascending=False)
+    remaining = null_df[null_df['Missing_%'] > 0]
+    if len(remaining) > 0:
+        print(remaining.to_string(index=False))
+    else:
+        print("  All structural NaN handled in preprocessing. Remaining: None.")
+    print(f"  Note: XGBoost handles any residual NaN natively (tree_path_dependent).")
+
+
+def class_distribution_report(y_train: pd.Series) -> None:
+    print("\n[EDA 2] Class Distribution (Training Set Only):")
+    n_lbw  = y_train.sum()
+    n_norm = (y_train == 0).sum()
+    print(f"  Normal (0): {n_norm:,} ({n_norm/len(y_train)*100:.1f}%)")
+    print(f"  LBW    (1): {n_lbw:,}  ({n_lbw/len(y_train)*100:.1f}%)")
+    print(f"  Ratio     : {n_norm/n_lbw:.2f}:1")
