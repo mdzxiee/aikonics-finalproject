@@ -183,3 +183,5 @@ def validate_output(df: pd.DataFrame) -> None:
     joblib.dump({'df': df, 'imbalance_ratio': imbalance_ratio}, PREPROCESSED)
     print(f"\n  [SAVED] {PREPROCESSED}")
     return df
+print(f"\n  [OUTPUT] Final shape: {df.shape}")
+    print(f"  [OUTPUT] Columns: {list(df.columns)}")
