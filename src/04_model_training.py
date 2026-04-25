@@ -171,3 +171,22 @@ def save_splits_as_csv(X_train, X_test, X_unseen,
     print(f"\n  [SAVED] 6 split CSVs → {ARTIFACTS_DIR}")
     for name, df in [('X_train', X_train), ('X_test', X_test), ('X_unseen', X_unseen)]:
         print(f"          {name}: {df.shape}")
+
+        # Main 
+
+def run_model_training() -> None:
+    print("=" * 65)
+    print("STAGE 4: MODEL TRAINING")
+    print("=" * 65)
+
+    # Load preprocessed data
+    pkg             = joblib.load(PREPROCESSED)
+    df              = pkg['df']
+    imbalance_ratio = pkg['imbalance_ratio']
+
+    # Dynamic scale_pos_weight (NEVER hardcoded)
+    spw = round(imbalance_ratio)
+    xgb_params = {**XGB_PARAMS, 'scale_pos_weight': spw}
+    print(f"\n  [CONFIG] scale_pos_weight = {spw} (dynamic from ratio={imbalance_ratio:.2f}:1)")
+    print(f"  [CONFIG] eval_metric = aucpr (PR-AUC monitoring, not logloss)")
+    print(f"  [CONFIG] No SimpleImputer — XGBoost handles NaN natively")
