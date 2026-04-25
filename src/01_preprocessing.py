@@ -175,3 +175,5 @@ def validate_output(df: pd.DataFrame) -> None:
     df = apply_filters(df)
     df, imbalance_ratio = create_target(df)
     df = create_mother_id(df)
+    df = clean_dhs_codes(df)
+    df = apply_structural_imputation(df)
