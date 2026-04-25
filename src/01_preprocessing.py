@@ -113,3 +113,13 @@ def create_mother_id(df: pd.DataFrame) -> pd.DataFrame:
         df['v003'].astype(str)
     )
     return df
+
+n_mothers = df['mother_id'].nunique()
+    n_multi   = df[df.duplicated('mother_id', keep=False)]['mother_id'].nunique()
+    print(f"\n  [GROUP] Unique mothers: {n_mothers:,}")
+    print(f"  [GROUP] Mothers with multiple birth records: {n_multi:,}")
+    print(f"  [GROUP] Avg records per mother: {len(df)/n_mothers:.2f}")
+    if n_multi > 0:
+        print(f"  [GROUP] ⚠  GroupShuffleSplit REQUIRED — "
+              f"{n_multi} mothers would leak across splits without it.")
+    return df
