@@ -146,3 +146,7 @@ n_tet = df['m1'].isnull().sum()
 n_first = (df['bord'] == 1).sum()
     df.loc[df['bord'] == 1, 'b11'] = 0.0
     print(f"  [IMPUTE] birth_interval → 0 for {n_first} first-borns (structural zero)")
+n_non_first_nan = df[(df['bord'] > 1) & df['b11'].isnull()].shape[0]
+    if n_non_first_nan > 0:
+        print(f"  [IMPUTE] birth_interval NaN for non-first-borns: {n_non_first_nan} → XGBoost handles")
+    return df
