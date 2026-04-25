@@ -135,3 +135,7 @@ def clean_dhs_codes(df: pd.DataFrame) -> pd.DataFrame:
 
 def apply_structural_imputation(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
+
+df.loc[(df['m45'] != 1) & df['m46'].isnull(), 'm46'] = 0.0
+    n_iron_zeroed = ((df['m45'] != 1) & (df['m46'] == 0.0)).sum()
+    print(f"\n  [IMPUTE] iron_days → 0 for {n_iron_zeroed} non-supplement mothers")
