@@ -38,3 +38,16 @@ def group_based_split(df: pd.DataFrame):
     X_main, y_main, g_main = X.iloc[main_idx], y.iloc[main_idx], g.iloc[main_idx]
     X_unseen = X.iloc[unseen_idx].reset_index(drop=True)
     y_unseen = y.iloc[unseen_idx].reset_index(drop=True)
+
+    # Step 2: Split main into train + test
+    gss2 = GroupShuffleSplit(n_splits=1, test_size=TEST_FRAC,
+                              random_state=RANDOM_STATE)
+    tr_idx, te_idx = next(gss2.split(X_main, y_main, groups=g_main))
+
+    X_train  = X_main.iloc[tr_idx].reset_index(drop=True)
+    y_train  = y_main.iloc[tr_idx].reset_index(drop=True)
+    X_test   = X_main.iloc[te_idx].reset_index(drop=True)
+    y_test   = y_main.iloc[te_idx].reset_index(drop=True)
+    g_train  = g_main.iloc[tr_idx]
+    g_test   = g_main.iloc[te_idx]
+    g_unseen = g.iloc[unseen_idx]
