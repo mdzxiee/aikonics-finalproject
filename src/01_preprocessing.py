@@ -142,3 +142,7 @@ df.loc[(df['m45'] != 1) & df['m46'].isnull(), 'm46'] = 0.0
 n_tet = df['m1'].isnull().sum()
     df['m1'] = df['m1'].fillna(0.0)
     print(f"  [IMPUTE] tetanus_shots → 0 for {n_tet} records with no documentation")
+
+n_first = (df['bord'] == 1).sum()
+    df.loc[df['bord'] == 1, 'b11'] = 0.0
+    print(f"  [IMPUTE] birth_interval → 0 for {n_first} first-borns (structural zero)")
