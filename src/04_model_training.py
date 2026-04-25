@@ -225,3 +225,6 @@ def run_model_training() -> None:
     print(f"  [SAVED] split_data.pkl → {split_path}")
 
     print(f"\n  [NEXT] Run 05_threshold_validation.py to select and save threshold.")
+
+    if __name__ == "__main__":
+    run_model_training()
