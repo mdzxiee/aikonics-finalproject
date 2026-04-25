@@ -159,3 +159,10 @@ def validate_output(df: pd.DataFrame) -> None:
     missing = [c for c in FEATURE_COLS if c not in df.columns]
     if missing:
         raise ValueError(f"Missing expected feature columns after preprocessing: {missing}")
+    print(f"\n  [VALIDATE] All {len(FEATURE_COLS)} feature columns present ✓")
+    null_summary = df[FEATURE_COLS].isnull().mean() * 100
+    remaining    = null_summary[null_summary > 0]
+    if len(remaining) > 0:
+        print(f"  [VALIDATE] Remaining NaN (handled by XGBoost natively):")
+        for col, pct in remaining.items():
+            print(f"               {col:<25} {pct:.2f}% NaN")
