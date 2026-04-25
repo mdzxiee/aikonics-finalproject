@@ -21,3 +21,4 @@ import numpy as np
 import joblib
 
 warnings.filterwarnings('ignore')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
