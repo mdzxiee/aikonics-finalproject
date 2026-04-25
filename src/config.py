@@ -84,3 +84,18 @@ COL_RENAME = {
     'v501': 'marital_status',
     'v136': 'household_size',
 }
+
+# Validity Filter Thresholds 
+GESTATIONAL_AGE_MIN  = 9       # b20 >= 9 (full-term only)
+WEIGHT_MAX_GRAMS     = 9000    # m19 < 9000 (removes DHS coded 9996/9998)
+LBW_THRESHOLD_GRAMS  = 2500   # WHO/DOH LBW definition
+
+# Splitting  
+RANDOM_STATE         = 42
+UNSEEN_FRAC          = 0.10    # sealed immediately
+TEST_FRAC            = 0.20    # of remaining 90%
+CV_FOLDS             = 10
+
+# For early stopping validation (held out from training only)
+ES_VALIDATION_FRAC   = 0.10    # 10% of training data
+EARLY_STOPPING_ROUNDS = 30
