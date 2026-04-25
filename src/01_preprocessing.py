@@ -93,3 +93,14 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
             "Verify data path and filter logic."
         )
     return df
+
+def create_target(df: pd.DataFrame):
+    df = df.copy()
+    df['LBW_Risk'] = (df['m19'] < LBW_THRESHOLD_GRAMS).astype(int)
+    n_lbw  = df['LBW_Risk'].sum()
+    n_norm = (df['LBW_Risk'] == 0).sum()
+    ratio  = n_norm / n_lbw
+    print(f"\n  [TARGET] LBW (1): {n_lbw:,} ({n_lbw/len(df)*100:.1f}%)")
+    print(f"  [TARGET] Normal (0): {n_norm:,} ({n_norm/len(df)*100:.1f}%)")
+    print(f"  [TARGET] Imbalance: {ratio:.2f}:1 → scale_pos_weight = {ratio:.1f}")
+    return df, ratio
