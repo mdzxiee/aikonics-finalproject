@@ -99,3 +99,36 @@ CV_FOLDS             = 10
 # For early stopping validation (held out from training only)
 ES_VALIDATION_FRAC   = 0.10    # 10% of training data
 EARLY_STOPPING_ROUNDS = 30
+
+# XGBoost Hyperparameters 
+# eval_metric = "aucpr":
+#   PR-AUC is used as the MONITORING metric for early stopping.
+#   IMPORTANT: This does NOT change the training loss (binary cross-entropy).
+#   scale_pos_weight handles the loss imbalance. aucpr is the correct
+#   stopping criterion for imbalanced data — logloss can decrease while
+#   minority-class recall degrades (it is majority-dominated even with
+#   scale_pos_weight in the monitoring context).
+#
+# No imputer in pipeline:
+#   XGBoost handles NaN natively via "sparsity-aware split finding."
+#   Imputing before XGBoost removes XGBoost's ability to learn the optimal
+#   direction for missing values from the data.
+#   SHAP uses tree_path_dependent mode which also handles NaN correctly.
+#
+# scale_pos_weight: set DYNAMICALLY from n_neg / n_pos in training script.
+
+XGB_PARAMS = {
+    'n_estimators':      500,      # upper bound; early stopping finds optimal
+    'max_depth':         3,        # shallow — overlapping classes (Cohen's d < 0.20)
+    'learning_rate':     0.05,     # slow, stable convergence
+    'subsample':         0.8,      # row subsampling per tree
+    'colsample_bytree':  0.8,      # feature subsampling per tree
+    'min_child_weight':  5,        # prevents splits on < 5 samples (minority safety)
+    'reg_alpha':         0.1,      # L1 regularization
+    'reg_lambda':        2.0,      # L2 regularization
+    'eval_metric':       'aucpr',  # PR-AUC monitoring — correct for imbalanced data
+    'random_state':      RANDOM_STATE,
+    'verbosity':         0,
+    'n_jobs':            -1,
+    # scale_pos_weight: set dynamically (n_neg / n_pos) in 04_model_training.py
+}
