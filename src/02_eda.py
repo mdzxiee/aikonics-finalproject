@@ -158,3 +158,28 @@ def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
                 dpi=150, bbox_inches='tight')
     plt.close()
     print("  [SAVED] eda_distributions.png")
+
+    def plot_class_comparison(X_train: pd.DataFrame, y_train: pd.Series) -> None:
+    """Box plots comparing LBW vs Normal across continuous features."""
+    cont_feats = ['wealth_score', 'education_yrs', 'birth_interval',
+                  'anc_first_timing', 'iron_days', 'maternal_age']
+    present = [f for f in cont_feats if f in X_train.columns]
+    fig, axes = plt.subplots(1, len(present), figsize=(18, 5))
+    fig.suptitle('LBW vs Normal — Feature Comparison (Training Set)',
+                 fontsize=13, fontweight='bold')
+    for ax, feat in zip(axes, present):
+        data = [
+            X_train[feat][y_train == 0].dropna().values,
+            X_train[feat][y_train == 1].dropna().values,
+        ]
+        bp = ax.boxplot(data, labels=['Normal', 'LBW'],
+                        patch_artist=True, notch=False)
+        bp['boxes'][0].set_facecolor('#4472C4')
+        bp['boxes'][1].set_facecolor('#ED7D31')
+        ax.set_title(feat, fontweight='bold', fontsize=9)
+        ax.grid(linestyle='--', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'eda_class_comparison.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print("  [SAVED] eda_class_comparison.png")
