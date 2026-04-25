@@ -49,7 +49,7 @@ LOAD_COLS = [
     'b11',     # preceding birth interval in months (0 = first-born structural zero)
     'v025',    # residence type: 1=urban, 2=rural
     'v024',    # region code (1–17, all Philippine regions)
-    'm14',     # month of first ANC visit: 0=no ANC, 1–9=month (98/99=DK → filter)
+    'm14',     # month of first ANC visit: 0=no ANC, 1–20=weeks (98/99=DK → filter)
     'm45',     # iron supplementation: 1=yes, 0=no (8=DK → filter out)
     'm46',     # days took iron supplements (0–270; >270=DHS code → NaN)
     'm1',      # tetanus toxoid injections (0–7; 8/9=DK → NaN)
@@ -192,7 +192,7 @@ NDHS_RANGES = {
     'birth_interval':   (0, 120),           # months; 0 = first-born (structural)
     'residence_type':   (1, 2),             # 1=urban, 2=rural
     'region':           (1, 17),            # All 17 Philippine regions
-    'anc_first_timing': (0, 9),             # LOCKED TO 9. (Human pregnancy limit)
+    'anc_first_timing': (0, 9),             # LOCKED TO 9. 
     'iron_supplement':  (0, 1),             # 0=no, 1=yes
     'iron_days':        (0, 270),           # 0 if no iron given; max 270
     'tetanus_shots':    (0, 7),             # 8/9=DK already replaced with NaN
