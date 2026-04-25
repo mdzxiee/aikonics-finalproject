@@ -78,3 +78,30 @@ def generate_oof_probabilities(X_train: pd.DataFrame, y_train: pd.Series,
 
     print(f"\n  [CV] {CV_FOLDS}-fold StratifiedGroupKFold — mother-level separation")
     print(f"  [CV] Early stopping: {EARLY_STOPPING_ROUNDS} rounds, eval_metric=aucpr")
+
+    for fold_n, (tr_idx, va_idx) in enumerate(
+            sgkf.split(X_train, y_train, groups=g_train), start=1):
+
+        X_tr, y_tr = X_train.iloc[tr_idx], y_train.iloc[tr_idx]
+        X_va, y_va = X_train.iloc[va_idx],  y_train.iloc[va_idx]
+
+        # Verify no group leakage within this fold
+        g_tr_fold = g_train.iloc[tr_idx]
+        g_va_fold = g_train.iloc[va_idx]
+        assert len(set(g_tr_fold) & set(g_va_fold)) == 0, \
+            f"LEAKAGE in fold {fold_n}!"
+
+        fold_model = XGBClassifier(**xgb_params)
+        fold_model.fit(
+            X_tr, y_tr,
+            eval_set=[(X_va, y_va)],
+            early_stopping_rounds=EARLY_STOPPING_ROUNDS,
+            verbose=False
+        )
+
+        va_proba = fold_model.predict_proba(X_va)[:, 1]
+        oof[va_idx] = va_proba
+        fold_auc = roc_auc_score(y_va, va_proba)
+        fold_aucs.append(fold_auc)
+        best_it = fold_model.best_iteration
+        print(f"    Fold {fold_n:2d}: AUC={fold_auc:.4f} | best_iter={best_it}")
