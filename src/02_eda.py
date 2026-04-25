@@ -34,7 +34,7 @@ from sklearn.metrics import roc_auc_score
 from scipy.stats import pointbiserialr, mannwhitneyu
 
 
-#  Helpers 
+#  Helpers
 
 def cohens_d(group1: pd.Series, group0: pd.Series) -> float:
     """Pooled standard deviation Cohen's d effect size."""
@@ -54,7 +54,8 @@ def individual_auc(series: pd.Series, y: pd.Series) -> float:
     auc = roc_auc_score(y, s)
     return max(auc, 1 - auc)
 
-#  Analysis Functions 
+
+#  Analysis Functions
 
 def missing_value_report(X_train: pd.DataFrame) -> None:
     print("\n[EDA 1] Missing Value Report (Training Set Only):")
@@ -79,7 +80,8 @@ def class_distribution_report(y_train: pd.Series) -> None:
     print(f"  LBW    (1): {n_lbw:,}  ({n_lbw/len(y_train)*100:.1f}%)")
     print(f"  Ratio     : {n_norm/n_lbw:.2f}:1")
 
-    def compute_rq1_feature_metrics(X_train: pd.DataFrame,
+
+def compute_rq1_feature_metrics(X_train: pd.DataFrame,
                                  y_train: pd.Series) -> pd.DataFrame:
     """
     RQ1 Evidence Table: Which features have highest predictive utility?
@@ -126,6 +128,7 @@ def class_distribution_report(y_train: pd.Series) -> None:
     print(f"        class distributions. Realistic NDHS-only ceiling: 0.58–0.65 AUC.")
     return df
 
+
 def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
     """Plot feature distributions stratified by LBW vs Normal."""
     fig, axes = plt.subplots(3, 5, figsize=(20, 12))
@@ -159,7 +162,8 @@ def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
     plt.close()
     print("  [SAVED] eda_distributions.png")
 
-    def plot_class_comparison(X_train: pd.DataFrame, y_train: pd.Series) -> None:
+
+def plot_class_comparison(X_train: pd.DataFrame, y_train: pd.Series) -> None:
     """Box plots comparing LBW vs Normal across continuous features."""
     cont_feats = ['wealth_score', 'education_yrs', 'birth_interval',
                   'anc_first_timing', 'iron_days', 'maternal_age']
@@ -184,11 +188,12 @@ def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
     plt.close()
     print("  [SAVED] eda_class_comparison.png")
 
-    #  Main 
+
+#  Main
 def run_eda() -> None:
-    print("=" * 65)
+
     print("STAGE 2: EXPLORATORY DATA ANALYSIS (TRAINING SET ONLY)")
-    print("=" * 65)
+
     print("\n  Loading training data only — test/unseen remain sealed.")
 
     if not os.path.exists(X_TRAIN_PATH):
@@ -203,6 +208,7 @@ def run_eda() -> None:
     print(f"  Training rows: {len(X_train):,} | LBW rate: {y_train.mean()*100:.1f}%")
 
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
     missing_value_report(X_train)
     class_distribution_report(y_train)
     feat_stats = compute_rq1_feature_metrics(X_train, y_train)

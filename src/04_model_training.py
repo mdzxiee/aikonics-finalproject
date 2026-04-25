@@ -269,9 +269,8 @@ def save_splits_as_csv(X_train, X_test, X_unseen,
 # Main 
 
 def run_model_training() -> None:
-    print("=" * 65)
+
     print("STAGE 4: MODEL TRAINING")
-    print("=" * 65)
 
     # Load preprocessed data
     pkg = joblib.load(PREPROCESSED)
