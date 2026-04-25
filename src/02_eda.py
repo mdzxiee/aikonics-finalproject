@@ -125,3 +125,36 @@ def class_distribution_report(y_train: pd.Series) -> None:
     print(f"  Note: Cohen's d < 0.20 for most features — heavily overlapping")
     print(f"        class distributions. Realistic NDHS-only ceiling: 0.58–0.65 AUC.")
     return df
+
+def plot_distributions(X_train: pd.DataFrame, y_train: pd.Series) -> None:
+    """Plot feature distributions stratified by LBW vs Normal."""
+    fig, axes = plt.subplots(3, 5, figsize=(20, 12))
+    fig.suptitle('Feature Distributions — LBW vs Normal (Training Set Only)',
+                 fontsize=14, fontweight='bold')
+    axes_flat = axes.flatten()
+
+    for i, feat in enumerate(FEATURE_COLS):
+        ax = axes_flat[i]
+        if feat not in X_train.columns:
+            ax.set_visible(False)
+            continue
+        lbw_vals  = X_train[feat][y_train == 1].dropna()
+        norm_vals = X_train[feat][y_train == 0].dropna()
+        bins = min(20, X_train[feat].nunique())
+        ax.hist(norm_vals, bins=bins, alpha=0.6, color='#4472C4',
+                label='Normal', density=True)
+        ax.hist(lbw_vals,  bins=bins, alpha=0.6, color='#ED7D31',
+                label='LBW', density=True)
+        ax.set_title(feat, fontweight='bold', fontsize=9)
+        ax.legend(fontsize=7)
+        ax.grid(linestyle='--', alpha=0.3)
+
+    # Hide unused axes
+    for j in range(len(FEATURE_COLS), len(axes_flat)):
+        axes_flat[j].set_visible(False)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'eda_distributions.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print("  [SAVED] eda_distributions.png")
