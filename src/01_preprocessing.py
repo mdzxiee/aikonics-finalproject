@@ -78,3 +78,8 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     n2 = len(df)
     df = df[df['m19'].notna() & (df['m19'] > 0) & (df['m19'] < WEIGHT_MAX_GRAMS)].copy()
     print(f"  [F3] Valid weight range:                    {len(df):,}  (-{n2-len(df):,})")
+
+    n3 = len(df)
+    df = df[~df['m13'].isin([98, 99])].copy()
+    df = df[~df['m45'].isin([8, 9])].copy()
+    print(f"  [F4] Remove DHS special codes:              {len(df):,}  (-{n3-len(df):,})")
