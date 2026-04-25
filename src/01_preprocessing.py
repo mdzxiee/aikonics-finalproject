@@ -224,9 +224,7 @@ def validate_output(df: pd.DataFrame) -> None:
 #  9. Main Execution
 def run_preprocessing() -> pd.DataFrame:
 
-    print("=" * 65)
     print("STAGE 1: DATA LOADING AND PREPROCESSING")
-    print("=" * 65)
 
     df = load_raw(RAW_DATA_PATH)
     df = apply_filters(df)
@@ -239,7 +237,7 @@ def run_preprocessing() -> pd.DataFrame:
 
     print(f"\n  [OUTPUT] Final shape: {df.shape}")
     print(f"  [OUTPUT] Columns: {list(df.columns)}")
-    
+
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
     joblib.dump({'df': df, 'imbalance_ratio': imbalance_ratio}, PREPROCESSED)
     print(f"\n  [SAVED] {PREPROCESSED}")
