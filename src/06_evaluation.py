@@ -52,7 +52,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import (
     MODEL_PATH, THRESHOLD_PATH, OOF_PATH,
-    ARTIFACTS_DIR, OUTPUTS_DIR, CLINICAL_THRESHOLD
+    ARTIFACTS_DIR, OUTPUTS_DIR, CLINICAL_THRESHOLDS
 )
 
 from sklearn.metrics import (
