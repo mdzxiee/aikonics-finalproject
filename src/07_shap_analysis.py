@@ -31,4 +31,29 @@ def get_explainer(model) -> shap.TreeExplainer:
     )
     return explainer
 
+# 2. Global SHAP Importance (RQ1) 
+
+def compute_global_shap(model, X_test: pd.DataFrame,
+                         y_test: pd.Series) -> tuple:
+    """Compute global SHAP importance on the TEST SET."""
+    explainer   = get_explainer(model)
+    shap_values = explainer(X_test)
+
+    mean_abs_shap = np.abs(shap_values.values).mean(axis=0)
+
+    ranking_df = pd.DataFrame({
+        'Feature':     FEATURE_COLS,
+        'Mean_|SHAP|': mean_abs_shap,
+    }).sort_values('Mean_|SHAP|', ascending=False).reset_index(drop=True)
+    ranking_df['Rank'] = range(1, len(ranking_df) + 1)
+
+    print(f"\n  [SHAP GLOBAL] Computed on X_test ({len(X_test)} rows, "
+          f"{y_test.sum()} LBW cases)")
+    print(f"  {'Rank':<6} {'Feature':<24} {'Mean |SHAP|'}")
+    print(f"  {'-'*45}")
+    for _, row in ranking_df.iterrows():
+        print(f"  {int(row['Rank']):<6} {row['Feature']:<24} {row['Mean_|SHAP|']:.5f}")
+
+    return shap_values, ranking_df
+
 
