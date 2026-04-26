@@ -193,3 +193,15 @@ def run_feature_selection() -> None:
         pi_df.to_csv(os.path.join(OUTPUTS_DIR, 'feature_permutation_importance.csv'),
                      index=False)
         print("  [SAVED] feature_permutation_importance.csv")
+
+    plot_correlation_heatmap(X_train)
+
+    print("\n[03] CONCLUSION:")
+    print("  Feature set is validated by: (1) domain BHW-collectibility criterion,")
+    print("  (2) VIF analysis showing acceptable multicollinearity,")
+    print("  (3) Individual AUC / Cohen's d from 02_eda.py showing non-zero signal,")
+    print("  (4) SHAP global importance from 07_shap_analysis.py.")
+    print("  NO features were dropped by this script.")
+
+if __name__ == "__main__":
+    run_feature_selection
