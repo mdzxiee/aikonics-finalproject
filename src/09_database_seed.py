@@ -18,3 +18,23 @@ from config import (
     DB_PATH, NDHS_RANGES, PROTO_DIR, FEATURE_COLS
 )
 
+# Database Initialization 
+
+def initialize_db() -> sqlite3.Connection:
+    """Create all tables from schema.sql. Safe to run multiple times (IF NOT EXISTS)."""
+    schema_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'database', 'schema.sql'
+    )
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+    with open(schema_path, 'r') as f:
+        schema_sql = f.read()
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.executescript(schema_sql)
+    conn.commit()
+    print(f"  [DB] Schema initialized: {DB_PATH}")
+    return conn
