@@ -183,3 +183,20 @@ def cross_validate_importance(ranking_df: pd.DataFrame) -> None:
         print(f"\n  ⚠  {len(large_diffs)} features with rank difference > 5.")
     else:
         print(f"\n  ✓ SHAP and PI rankings are broadly consistent (max diff ≤ 5).")
+
+#  Main 
+
+def run_shap_analysis() -> None:
+    print("=" * 65)
+    print("STAGE 7: SHAP EXPLAINABILITY ANALYSIS")
+    print("=" * 65)
+
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+
+    X_test   = pd.read_csv(X_TEST_PATH)
+    y_test   = pd.read_csv(Y_TEST_PATH).squeeze()
+    X_unseen = pd.read_csv(X_UNSEEN_PATH)
+    y_unseen = pd.read_csv(Y_UNSEEN_PATH).squeeze()
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
