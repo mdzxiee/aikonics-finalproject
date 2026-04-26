@@ -158,3 +158,22 @@ def register_model_in_database(verified: dict, meta: dict) -> None:
         print(f"\n  [DB] Database not initialized yet — skipping model registration.")
         print(f"       Run 09_database_seed.py to initialize the database.")
         return
+
+    import sqlite3
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("UPDATE model_registry SET is_active = 0")
+        perf_test   = meta.get('Test_Set', {})
+        perf_unseen = meta.get('Unseen_Holdout', {})
+        conn.execute("""
+            INSERT INTO model_registry
+                (model_version, model_path, threshold, test_auc, unseen_recall, is_active)
+            VALUES (?, ?, ?, ?, ?, 1)
+        """, (
+            'v1.0',
+            os.path.join(PROTO_DIR, 'model.pkl'),
+            verified['threshold'],
+            perf_test.get('ROC_AUC'),
+            perf_unseen.get('Recall'),
+        ))
+        conn.commit()
+    print(f"\n  [DB] Model registered in model_registry (is_active=1)")
