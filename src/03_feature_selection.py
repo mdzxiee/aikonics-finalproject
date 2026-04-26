@@ -124,3 +124,30 @@ def plot_correlation_heatmap(X_train: pd.DataFrame) -> None:
                 dpi=150, bbox_inches='tight')
     plt.close()
     print("  [SAVED] correlation_heatmap.png")
+
+# ─── Document Exclusions ─────────────────────────────────────────────────────
+
+def print_exclusion_rationale() -> None:
+    """
+    Explicit documentation of excluded variables for thesis panel defense.
+    This is the WRITTEN JUSTIFICATION for why certain NDHS variables
+    were NOT included in the feature set.
+    """
+    exclusions = [
+        ("m13",   "ANC visit COUNT",     "Excluded: timing (m14) is more informative for early prevention; collinear with m14"),
+        ("b4",    "Sex of child",         "Excluded: POST-BIRTH — unavailable before delivery (leakage)"),
+        ("b0",    "Twin indicator",       "Excluded: POST-BIRTH — leakage"),
+        ("m15",   "Place of delivery",    "Excluded: POST-BIRTH — leakage"),
+        ("v730",  "Partner age",          "Excluded: Not BHW-collectible; partner not always present"),
+        ("v701",  "Partner education",    "Excluded: Not BHW-collectible; partner not always present"),
+        ("m42b",  "NDHS record flag",     "Excluded: Survey administration flag — not a clinical input"),
+        ("m42d",  "NDHS record flag",     "Excluded: Survey administration flag — not a clinical input"),
+        ("m42e",  "NDHS record flag",     "Excluded: Survey administration flag — not a clinical input"),
+    ]
+    print("\n[03] Excluded Variable Documentation:")
+    print(f"  {'Variable':<10} {'DHS Label':<28} {'Reason'}")
+    print(f"  {'-'*80}")
+    for var, label, reason in exclusions:
+        print(f"  {var:<10} {label:<28} {reason}")
+    print(f"\n  Final feature count: {len(FEATURE_COLS)}")
+    print(f"  All retained features are BHW-collectible before delivery.")
