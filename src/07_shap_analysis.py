@@ -56,4 +56,44 @@ def compute_global_shap(model, X_test: pd.DataFrame,
 
     return shap_values, ranking_df
 
+# 3. Individual SHAP Waterfall (RQ4) 
 
+def plot_individual_waterfall(model, X_unseen: pd.DataFrame,
+                               y_unseen: pd.Series, threshold: float,
+                               label: str, filename: str) -> None:
+    """Plot a SHAP waterfall for a specific case from the UNSEEN HOLDOUT."""
+    explainer   = get_explainer(model)
+    shap_values = explainer(X_unseen)
+
+    proba = model.predict_proba(X_unseen)[:, 1]
+    pred  = (proba >= threshold).astype(int)
+    y_arr = np.array(y_unseen)
+
+    if label == 'tp':
+        candidates = np.where((y_arr == 1) & (pred == 1))[0]
+        title = 'True Positive — Correctly Identified LBW Case (Unseen Holdout)'
+    elif label == 'fn':
+        candidates = np.where((y_arr == 1) & (pred == 0))[0]
+        title = 'False Negative — Missed LBW Case (Unseen Holdout)\n(Supports Limitations Section)'
+    else:
+        candidates = np.arange(len(y_unseen))
+        title = f'SHAP Waterfall — {label}'
+
+    if len(candidates) == 0:
+        print(f"  [SHAP] No {label.upper()} cases found in unseen holdout — skipping.")
+        return
+
+    idx      = candidates[np.argmax(proba[candidates])]
+    case_proba = proba[idx]
+    actual    = y_arr[idx]
+
+    print(f"\n  [SHAP WATERFALL] {label.upper()} case: "
+          f"prob={case_proba:.4f}, actual={actual}, pred={pred[idx]}")
+
+    plt.figure(figsize=(10, 6))
+    shap.plots.waterfall(shap_values[idx], max_display=13, show=False)
+    plt.title(title, fontweight='bold', fontsize=10)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, filename), dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  [SAVED] {filename}")
