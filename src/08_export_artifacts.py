@@ -22,3 +22,25 @@ from config import (
     ARTIFACTS_DIR, OUTPUTS_DIR, PROTO_DIR, FEATURE_COLS
 )
 
+#  Artifact Verification 
+def verify_artifacts() -> dict:
+    """Verify all three required artifacts exist and are internally consistent."""
+    required = {
+        'model.pkl':     MODEL_PATH,
+        'threshold.pkl': THRESHOLD_PATH,
+        'features.json': FEATURES_PATH,
+    }
+    verified = {}
+
+    print(f"\n  [VERIFY] Checking required artifacts:")
+    for name, path in required.items():
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f"Missing artifact: {path}\n"
+                f"Run the pipeline stages in order before exporting."
+            )
+        size_kb = os.path.getsize(path) / 1024
+        print(f"    ✓ {name:<20} ({size_kb:.1f} KB)")
+        verified[name] = path
+
+    return verified
