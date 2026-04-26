@@ -186,3 +186,30 @@ def seed_bhw_user(conn: sqlite3.Connection) -> int:
     conn.commit()
     print(f"  [SEED] BHW user: Mildred Santos (bhw_id=1)")
     return 1
+
+# Run Predictions and Insert Assessments 
+
+def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
+    """Run each seed record through the predictor and clinical flags."""
+    proto_dir = PROTO_DIR
+    if proto_dir not in sys.path:
+        sys.path.insert(0, proto_dir)
+
+    try:
+        from predictor      import get_predictor
+        from clinical_flags import apply_decision_fusion
+    except ImportError as e:
+        print(f"  [SKIP] Could not import prototype modules: {e}")
+        print(f"         Run 08_export_artifacts.py first to copy model to prototype/.")
+        return
+
+    predictor = get_predictor()
+    records   = get_seed_records()
+
+    for i, rec in enumerate(records, start=1):
+        try:
+            validate_seed_record(rec)
+        except ValueError as e:
+            print(f"  [SEED] Case {i} REJECTED: {e}")
+            continue
+
