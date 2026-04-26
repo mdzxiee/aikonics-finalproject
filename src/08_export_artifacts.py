@@ -146,3 +146,15 @@ def save_artifact_manifest(verified: dict, meta: dict) -> None:
         for name, m in meta.items():
             print(f"    {name:<25} ROC-AUC={m.get('ROC_AUC', 0):.4f}  PR-AUC={m.get('PR_AUC', 0):.4f}  Recall={m.get('Recall', 0):.4f}")
 
+#  Register in Database 
+
+def register_model_in_database(verified: dict, meta: dict) -> None:
+    """Insert a record into model_registry in the SQLite database."""
+    db_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'database', 'aikonic.db'
+    )
+    if not os.path.exists(db_path):
+        print(f"\n  [DB] Database not initialized yet — skipping model registration.")
+        print(f"       Run 09_database_seed.py to initialize the database.")
+        return
