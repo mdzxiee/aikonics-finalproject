@@ -144,3 +144,52 @@ def build_sensitivity_table(oof_proba: np.ndarray,
             'Selected':  '← SELECTED' if abs(t - selected) < 0.026 else '',
         })
     return pd.DataFrame(rows)
+# ─── Visualization ──────────────────────────────────────────────────────────
+
+def plot_threshold_analysis(oof_proba: np.ndarray, y_train: pd.Series,
+                             cand_df: pd.DataFrame, threshold: float) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle(
+        f'Threshold Selection — OOF Probabilities | Selected: t={threshold:.4f}',
+        fontsize=13, fontweight='bold'
+    )
+
+    # Left: Precision-Recall curve
+    prec_c, rec_c, thr_c = precision_recall_curve(y_train, oof_proba)
+    ax = axes[0]
+    ax.plot(rec_c, prec_c, '#4472C4', lw=2)
+    ax.axvline(MIN_RECALL_FLOOR, color='gray', linestyle=':', alpha=0.7,
+               label=f'Recall floor = {MIN_RECALL_FLOOR}')
+    # Mark selected threshold on curve
+    sel_row = cand_df.iloc[(cand_df['threshold'] - threshold).abs().argsort()[:1]]
+    if len(sel_row) > 0:
+        ax.scatter(sel_row['recall'].values[0], sel_row['precision'].values[0],
+                   color='red', s=150, zorder=5, label=f'Selected t={threshold:.4f}')
+    ax.set_xlabel('Recall')
+    ax.set_ylabel('Precision')
+    ax.set_title('Precision-Recall Curve (OOF)', fontweight='bold')
+    ax.legend(fontsize=9)
+    ax.grid(linestyle='--', alpha=0.4)
+
+    # Right: Recall and F1 vs Threshold
+    ax2 = axes[1]
+    ax2.plot(cand_df['threshold'], cand_df['recall'], '#4472C4', lw=2,
+             linestyle='--', label='Recall')
+    ax2.plot(cand_df['threshold'], cand_df['f1'],     '#ED7D31', lw=2,
+             label='F1')
+    ax2.axvline(threshold, color='red', linestyle='--', lw=1.5,
+                label=f'Selected t={threshold:.4f}')
+    ax2.axhline(MIN_RECALL_FLOOR, color='gray', linestyle=':', alpha=0.7,
+                label=f'Recall floor = {MIN_RECALL_FLOOR}')
+    ax2.set_xlabel('Threshold')
+    ax2.set_ylabel('Score')
+    ax2.set_title('Recall & F1 vs Threshold (OOF)', fontweight='bold')
+    ax2.legend(fontsize=9)
+    ax2.grid(linestyle='--', alpha=0.4)
+
+    plt.tight_layout()
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'threshold_analysis.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"\n  [SAVED] threshold_analysis.png")
