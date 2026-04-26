@@ -172,3 +172,24 @@ def run_feature_selection() -> None:
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
     print_exclusion_rationale()
+
+    print("\n[03] VIF Analysis (multicollinearity check):")
+    vif_df = compute_vif(X_train)
+    print(vif_df.to_string(index=False))
+    high_vif = vif_df[vif_df['VIF'] > 10]
+    if len(high_vif) > 0:
+        print(f"\n  ⚠  Features with VIF > 10: {list(high_vif['Feature'])}")
+        print(f"  NOTE: XGBoost is robust to collinearity (colsample_bytree=0.8).")
+        print(f"  SHAP values in 07_shap_analysis.py will distribute credit correctly.")
+    else:
+        print(f"  All VIF < 10 — no severe multicollinearity detected.")
+    vif_df.to_csv(os.path.join(OUTPUTS_DIR, 'feature_vif.csv'), index=False)
+    print("  [SAVED] feature_vif.csv")
+
+    print("\n[03] Permutation Importance (requires model.pkl from 04):")
+    pi_df = compute_permutation_importance(X_train, y_train)
+    if len(pi_df) > 0:
+        print(pi_df.to_string(index=False))
+        pi_df.to_csv(os.path.join(OUTPUTS_DIR, 'feature_permutation_importance.csv'),
+                     index=False)
+        print("  [SAVED] feature_permutation_importance.csv")
