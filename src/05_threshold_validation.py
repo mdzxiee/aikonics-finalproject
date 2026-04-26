@@ -217,3 +217,25 @@ def run_threshold_validation() -> float:
     print(sens_table.to_string(index=False))
 
     plot_threshold_analysis(oof_proba, y_train, cand_df, threshold)
+
+    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+
+    # Save threshold.pkl — SEPARATE from model.pkl (by design)
+    joblib.dump(threshold, THRESHOLD_PATH)
+    print(f"\n  [SAVED] threshold.pkl = {threshold:.4f}")
+
+    # Save features.json — for prototype schema validation
+    with open(FEATURES_PATH, 'w') as f:
+        json.dump({'features': FEATURE_COLS, 'n_features': len(FEATURE_COLS)}, f, indent=2)
+    print(f"  [SAVED] features.json ({len(FEATURE_COLS)} features)")
+
+    # Save sensitivity table
+    sens_table.to_csv(
+        os.path.join(OUTPUTS_DIR, 'threshold_selection_table.csv'), index=False
+    )
+    print(f"  [SAVED] threshold_selection_table.csv")
+
+    print(f"\n  [SUMMARY] Selected threshold: {threshold:.4f}")
+    print(f"  [SUMMARY] This threshold will be applied IDENTICALLY to")
+    print(f"            CV (OOF), Test, and Unseen sets in 06_evaluation.py.")
+    return threshold
