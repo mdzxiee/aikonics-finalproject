@@ -173,3 +173,16 @@ def get_seed_records() -> list:
             'expected_escalated': False,
         },
     ]
+
+#  Seed BHW User 
+
+def seed_bhw_user(conn: sqlite3.Connection) -> int:
+    cur = conn.execute("""
+        INSERT OR IGNORE INTO bhw_users
+            (bhw_id, full_name, barangay, municipality, region, contact_no)
+        VALUES (1, 'BHW Mildred Santos', 'Brgy. Sta. Cruz',
+                'Ligao City', 'Bicol', '0917-555-0001')
+    """)
+    conn.commit()
+    print(f"  [SEED] BHW user: Mildred Santos (bhw_id=1)")
+    return 1
