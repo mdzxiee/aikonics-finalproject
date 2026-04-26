@@ -228,3 +228,29 @@ def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.D
     print(f"\n  Final Level Distribution:\n{df['final_level'].value_counts().to_string()}")
 
     return df
+
+def plot_layer2_simulation(sim_df: pd.DataFrame) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle('RQ3 — Layer 2 Decision-Level Fusion Effect', fontsize=12, fontweight='bold')
+
+    tier_counts = sim_df['ml_tier'].value_counts().reindex(['LOW', 'MEDIUM', 'HIGH'], fill_value=0)
+    colors_ml   = ['#70AD47', '#FFC000', '#FF0000']
+    axes[0].bar(tier_counts.index, tier_counts.values, color=colors_ml, edgecolor='white')
+    axes[0].set_title('Layer 1 ML Risk Tier Distribution', fontweight='bold')
+    
+    final_counts = sim_df['final_level'].value_counts()
+    color_map    = {
+        'HIGH RISK (ML only)':                '#FF0000',
+        'MEDIUM RISK (ML only)':              '#FFC000',
+        'LOW RISK (ML only)':                 '#70AD47',
+        'HIGH PRIORITY REFERRAL (Escalated)': '#C00000',
+    }
+    bar_colors = [color_map.get(k, '#4472C4') for k in final_counts.index]
+    axes[1].barh(range(len(final_counts)), final_counts.values, color=bar_colors, edgecolor='white')
+    axes[1].set_yticks(range(len(final_counts)))
+    axes[1].set_yticklabels([k[:35] for k in final_counts.index], fontsize=8)
+    axes[1].set_title('Final Level After Layer 2 Escalation', fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'layer2_simulation.png'), dpi=150, bbox_inches='tight')
+    plt.close()
