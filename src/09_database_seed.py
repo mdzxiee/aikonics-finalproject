@@ -223,3 +223,12 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         )
         result = {**fusion, 'shap_top_features': ml_result['shap_top_features']}
 
+        expected_tier = rec.get('expected_tier')
+        actual_tier   = ml_result['ml_risk_tier']
+        expected_esc  = rec.get('expected_escalated')
+        actual_esc    = result['escalated']
+
+        if not ((expected_tier is None) or (actual_tier == expected_tier)):
+            print(f"  [SEED] Case {i} TIER MISMATCH: expected {expected_tier}, got {actual_tier}")
+        if not ((expected_esc is None) or (actual_esc == expected_esc)):
+            print(f"  [SEED] Case {i} ESCALATION MISMATCH: expected {expected_esc}, got {actual_esc}")
