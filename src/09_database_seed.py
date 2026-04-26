@@ -198,7 +198,9 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
     try:
         from predictor      import get_predictor
         from clinical_flags import apply_decision_fusion
-    except ImportError:
+    except ImportError as e:
+        print(f"  [SKIP] Could not import prototype modules: {e}")
+        print(f"         Run 08_export_artifacts.py first to copy model to prototype/.")
         return
 
     predictor = get_predictor()
@@ -207,7 +209,8 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
     for i, rec in enumerate(records, start=1):
         try:
             validate_seed_record(rec)
-        except ValueError:
+        except ValueError as e:
+            print(f"  [SEED] Case {i} REJECTED: {e}")
             continue
 
         ml_result = predictor.predict(rec['layer1'])
@@ -220,12 +223,27 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         )
         result = {**fusion, 'shap_top_features': ml_result['shap_top_features']}
 
+        expected_tier = rec.get('expected_tier')
+        actual_tier   = ml_result['ml_risk_tier']
+        expected_esc  = rec.get('expected_escalated')
+        actual_esc    = result['escalated']
+
+        tier_ok = (expected_tier is None) or (actual_tier == expected_tier)
+        esc_ok  = (expected_esc is None) or (actual_esc == expected_esc)
+
+        if not tier_ok:
+            print(f"  [SEED] Case {i} TIER MISMATCH: expected {expected_tier}, got {actual_tier}")
+        if not esc_ok:
+            print(f"  [SEED] Case {i} ESCALATION MISMATCH: expected {expected_esc}, got {actual_esc}")
+
         cur = conn.execute("""
             INSERT INTO patients
                 (bhw_id, full_name, barangay, municipality, region, residence_type)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (bhw_id, rec['patient']['full_name'], rec['patient']['barangay'],
-              rec['patient']['municipality'], rec['layer1']['region'], rec['layer1']['residence_type']))
+        """, (
+            bhw_id, rec['patient']['full_name'], rec['patient']['barangay'],
+            rec['patient']['municipality'], rec['layer1']['region'], rec['layer1']['residence_type'],
+        ))
         patient_id = cur.lastrowid
 
         shap_json = json.dumps(result.get('shap_top_features', []))
@@ -251,3 +269,24 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
             1 if 'REFERRAL' in result['final_risk_level'] else 0,
         ))
         assessment_id = cur2.lastrowid
+
+        for flag in result.get('clinical_flags', []):
+            conn.execute("""
+                INSERT INTO clinical_flags
+                    (assessment_id, flag_type, severity, measured_value, threshold_value, flag_message)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (assessment_id, flag.get('type'), flag.get('severity'), flag.get('value'), flag.get('threshold'), flag.get('message')))
+
+        for rank, s in enumerate(result.get('shap_top_features', []), start=1):
+            conn.execute("""
+                INSERT INTO shap_explanations
+                    (assessment_id, feature_rank, feature_name, shap_value, feature_value)
+                VALUES (?, ?, ?, ?, ?)
+            """, (assessment_id, rank, s.get('feature'), s.get('shap_value'), s.get('feature_value')))
+
+        conn.commit()
+        print(f"  [SEED] Case {i}: {rec['patient']['full_name']:<22} | "
+              f"ML={actual_tier:<7} | Escalated={actual_esc} | "
+              f"Final: {result['final_risk_level']}")
+
+    print(f"\n  [SEED] {len(records)} assessment cases inserted.")
