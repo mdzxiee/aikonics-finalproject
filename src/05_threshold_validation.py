@@ -1,4 +1,3 @@
-# ===========================================================================
 # AIKONIC — CS 322 | LBW Risk Prediction
 # File: src/05_threshold_validation.py
 #
@@ -27,13 +26,12 @@
 #      the model's internal parameters.
 #
 # Connects to: 06_evaluation.py, prototype/predictor.py
-# ===========================================================================
+# --------------------------------------------------------------------
 
 import os, sys, json, warnings
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import joblib
 
 warnings.filterwarnings('ignore')
@@ -48,7 +46,9 @@ from sklearn.metrics import (
     roc_auc_score, precision_recall_curve, f1_score,
     precision_score, recall_score
 )
-# ─── Threshold Selection ─────────────────────────────────────────────────────
+
+
+# Threshold Selection 
 
 def select_threshold(oof_proba: np.ndarray, y_train: pd.Series) -> float:
     """
@@ -118,7 +118,9 @@ def select_threshold(oof_proba: np.ndarray, y_train: pd.Series) -> float:
     print(f"  [THRESHOLD] OOF F1     : {t_f1:.4f}")
 
     return threshold, cand_df
-# ─── Threshold Sensitivity Table ─────────────────────────────────────────────
+
+
+#  Threshold Sensitivity Table 
 
 def build_sensitivity_table(oof_proba: np.ndarray,
                              y_train: pd.Series,
@@ -144,7 +146,9 @@ def build_sensitivity_table(oof_proba: np.ndarray,
             'Selected':  '← SELECTED' if abs(t - selected) < 0.026 else '',
         })
     return pd.DataFrame(rows)
-# ─── Visualization ──────────────────────────────────────────────────────────
+
+
+#  Visualization 
 
 def plot_threshold_analysis(oof_proba: np.ndarray, y_train: pd.Series,
                              cand_df: pd.DataFrame, threshold: float) -> None:
@@ -193,14 +197,16 @@ def plot_threshold_analysis(oof_proba: np.ndarray, y_train: pd.Series,
                 dpi=150, bbox_inches='tight')
     plt.close()
     print(f"\n  [SAVED] threshold_analysis.png")
-    # ─── Main ────────────────────────────────────────────────────────────────────
+
+
+#  Main 
 
 def run_threshold_validation() -> float:
-    print("=" * 65)
+
     print("STAGE 5: THRESHOLD SELECTION AND VALIDATION")
-    print("=" * 65)
-    print("\n  ⚠  Threshold computed EXCLUSIVELY on OOF probabilities.")
-    print("  ⚠  Test and unseen data are NOT used here.")
+  
+    print("\n Threshold computed EXCLUSIVELY on OOF probabilities.")
+    print("  Test and unseen data are NOT used here.")
 
     pkg       = joblib.load(OOF_PATH)
     oof_proba = pkg['oof_proba']
@@ -239,6 +245,7 @@ def run_threshold_validation() -> float:
     print(f"  [SUMMARY] This threshold will be applied IDENTICALLY to")
     print(f"            CV (OOF), Test, and Unseen sets in 06_evaluation.py.")
     return threshold
+
 
 if __name__ == "__main__":
     run_threshold_validation()
