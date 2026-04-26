@@ -78,3 +78,20 @@ def verify_artifacts() -> dict:
     print(f"    ✓ features.json matches config.FEATURE_COLS ({len(FEATURE_COLS)} features)")
 
     return {'model': model, 'threshold': float(threshold), 'features': json_feats}
+
+# Copy Artifacts to Prototype 
+
+def copy_to_prototype() -> None:
+    """Copy the three validated artifacts into the prototype/ directory."""
+    os.makedirs(PROTO_DIR, exist_ok=True)
+
+    copies = [
+        (MODEL_PATH,     os.path.join(PROTO_DIR, 'model.pkl')),
+        (THRESHOLD_PATH, os.path.join(PROTO_DIR, 'threshold.pkl')),
+        (FEATURES_PATH,  os.path.join(PROTO_DIR, 'features.json')),
+    ]
+
+    print(f"\n  [COPY] Deploying artifacts to {PROTO_DIR}/")
+    for src, dst in copies:
+        shutil.copy2(src, dst)
+        print(f"    Copied: {os.path.basename(src)}")
