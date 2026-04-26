@@ -290,3 +290,17 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
               f"Final: {result['final_risk_level']}")
 
     print(f"\n  [SEED] {len(records)} assessment cases inserted.")
+
+#  Main
+
+def run_database_seed() -> None:
+    print("=" * 65)
+    print("STAGE 9: DATABASE INITIALIZATION AND SEEDING")
+    print("=" * 65)
+    print(f"\n  All seed data validated against NDHS_RANGES from config.py.")
+    print(f"  No out-of-distribution values (no anc_first_timing > 9, etc.).")
+
+    conn = initialize_db()
+
+    bhw_id = seed_bhw_user(conn)
+    seed_assessments(conn, bhw_id)
