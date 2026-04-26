@@ -43,4 +43,28 @@ def verify_artifacts() -> dict:
         print(f"    ✓ {name:<20} ({size_kb:.1f} KB)")
         verified[name] = path
 
-    return verified
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+
+    with open(FEATURES_PATH) as f:
+        feat_json = json.load(f)
+
+    json_feats   = feat_json.get('features', [])
+    config_feats = FEATURE_COLS
+    if json_feats != config_feats:
+        raise ValueError(
+            f"FEATURE MISMATCH between features.json and config.py!\n"
+            f"  features.json: {json_feats}\n"
+            f"  config.FEATURE_COLS: {config_feats}\n"
+            "Regenerate features.json by rerunning 05_threshold_validation.py."
+        )
+
+    if not (0.0 < float(threshold) < 1.0):
+        raise ValueError(
+            f"Threshold {threshold} is outside (0, 1). Check 05_threshold_validation.py."
+        )
+
+    print(f"    ✓ Threshold = {float(threshold):.4f} (valid range)")
+    print(f"    ✓ features.json matches config.FEATURE_COLS ({len(FEATURE_COLS)} features)")
+
+    return {'model': model, 'threshold': float(threshold), 'features': json_feats}
