@@ -315,3 +315,47 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(os.path.join(OUTPUTS_DIR, 'evaluation_panels.png'), dpi=150, bbox_inches='tight')
     plt.close()
+
+    def run_evaluation() -> None:
+    print("STAGE 6: FULL MODEL EVALUATION")
+    
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+    oof_pkg   = joblib.load(OOF_PATH)
+    splits    = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
+
+    oof_proba = oof_pkg['oof_proba']
+    y_train   = oof_pkg['y_train']
+    X_test    = splits['X_test'];  y_test   = splits['y_test']
+    X_unseen  = splits['X_unseen'];y_unseen = splits['y_unseen']
+
+    proba_test   = model.predict_proba(X_test)[:, 1]
+    proba_unseen = model.predict_proba(X_unseen)[:, 1]
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+    n_sets  = 3
+    fig     = plt.figure(figsize=(21, 10))
+    colors  = ['#4472C4', '#ED7D31', '#70AD47']
+    ax_cms  = [fig.add_subplot(2, n_sets, i + 1) for i in range(n_sets)]
+    ax_rocs = [fig.add_subplot(2, n_sets, n_sets + i + 1) for i in range(n_sets)]
+    
+    results = []
+    results.append(evaluate_partition('10-Fold CV (OOF)', oof_proba, y_train, threshold, colors[0], ax_cms[0], ax_rocs[0]))
+    results.append(evaluate_partition('Test Set', proba_test, y_test, threshold, colors[1], ax_cms[1], ax_rocs[1]))
+    results.append(evaluate_partition('Unseen Holdout', proba_unseen, y_unseen, threshold, colors[2], ax_cms[2], ax_rocs[2]))
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'evaluation_panels.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    summary = pd.DataFrame(results)
+    summary.to_csv(os.path.join(OUTPUTS_DIR, 'xgb_performance_summary.csv'), index=False)
+
+    check_generalization(results)
+
+    sim_df = simulate_layer2_escalation(proba_test, threshold)
+    sim_df.to_csv(os.path.join(OUTPUTS_DIR, 'layer2_simulation.csv'), index=False)
+    plot_layer2_simulation(sim_df)
+    
+    print("\n  [EVALUATION COMPLETE]")
