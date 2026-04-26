@@ -66,3 +66,43 @@ def validate_seed_record(record: dict) -> None:
             f"anc_first_timing={anc} is out of valid range (0–9). "
             f"Values 98/99 are DHS codes and must NOT be used in seed data."
         )
+
+# Seed Records 
+
+def get_seed_records() -> list:
+    """Three clinically representative seed records."""
+    return [
+        {
+            'patient': {
+                'full_name':    'Maria Santos',
+                'barangay':     'Brgy. San Pedro',
+                'municipality': 'Iriga City',
+                'region':       5,   
+            },
+            'layer1': {
+                'maternal_age':     28,
+                'education_yrs':    4,     
+                'wealth_score':   -120000,   
+                'birth_order':      5,
+                'birth_interval':  18,     
+                'residence_type':   2,     
+                'region':           5,     
+                'anc_first_timing': 7,     
+                'iron_supplement':  1,
+                'iron_days':       30,
+                'tetanus_shots':    1,
+                'marital_status':   1,
+                'household_size':   8,
+            },
+            'layer2': {
+                'bp_systolic':    118,    
+                'bp_diastolic':    76,
+                'muac_cm':        24.5,   
+                'weight_kg':      50,
+                'height_cm':     152,
+                'gestational_weeks': 28,
+            },
+            'expected_tier': 'HIGH',
+            'expected_escalated': False,
+        }
+    ]
