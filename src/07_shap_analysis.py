@@ -97,3 +97,28 @@ def plot_individual_waterfall(model, X_unseen: pd.DataFrame,
     plt.savefig(os.path.join(OUTPUTS_DIR, filename), dpi=150, bbox_inches='tight')
     plt.close()
     print(f"  [SAVED] {filename}")
+
+# 4. Beeswarm Plot 
+
+def plot_beeswarm(shap_values, X_test: pd.DataFrame) -> None:
+    """SHAP beeswarm plot: each dot is one observation in X_test."""
+    plt.figure(figsize=(11, 8))
+    shap.summary_plot(
+        shap_values.values,
+        X_test,
+        feature_names=FEATURE_COLS,
+        max_display=13,
+        show=False,
+        plot_type='dot'
+    )
+    plt.title(
+        'SHAP Beeswarm — Feature Impact on LBW Probability\n'
+        'Each dot = one case in test set | Red = high value | Blue = low value\n'
+        '(RQ4: Individual-level decision pathways)',
+        fontweight='bold', fontsize=10
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'shap_beeswarm.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  [SAVED] shap_beeswarm.png")
