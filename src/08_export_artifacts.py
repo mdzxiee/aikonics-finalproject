@@ -64,6 +64,16 @@ def verify_artifacts() -> dict:
             f"Threshold {threshold} is outside (0, 1). Check 05_threshold_validation.py."
         )
 
+    try:
+        n_model_feats = model.n_features_in_
+        if n_model_feats != len(FEATURE_COLS):
+            raise ValueError(
+                f"Model expects {n_model_feats} features but config has {len(FEATURE_COLS)}."
+            )
+        print(f"    ✓ Model feature count matches config ({n_model_feats})")
+    except AttributeError:
+        print(f"    ℹ  n_features_in_ not available on this XGBoost version — skip count check")
+
     print(f"    ✓ Threshold = {float(threshold):.4f} (valid range)")
     print(f"    ✓ features.json matches config.FEATURE_COLS ({len(FEATURE_COLS)} features)")
 
