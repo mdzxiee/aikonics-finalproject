@@ -189,4 +189,6 @@ def run_export() -> None:
     copy_to_prototype()
 
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    meta = load_performance_metadata()
+    save_artifact_manifest(verified, meta)
 
