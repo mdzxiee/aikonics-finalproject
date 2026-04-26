@@ -67,3 +67,30 @@ def compute_vif(X: pd.DataFrame) -> pd.DataFrame:
         vif = 1 / (1 - r2) if r2 < 1.0 else float('inf')
         vif_data.append({'Feature': col, 'VIF': round(vif, 3)})
     return pd.DataFrame(vif_data).sort_values('VIF', ascending=False)
+
+# ─── Permutation Importance ──────────────────────────────────────────────────
+
+def compute_permutation_importance(X_train: pd.DataFrame,
+                                   y_train: pd.Series) -> pd.DataFrame:
+    """
+    Permutation importance from the trained model.
+    More reliable than XGBoost's built-in gain importance for correlated features.
+    Uses 10 repeats to estimate variance of importance estimates.
+    """
+    if not os.path.exists(MODEL_PATH):
+        print("  [SKIP] model.pkl not found — run 04_model_training.py first.")
+        return pd.DataFrame()
+
+    model = joblib.load(MODEL_PATH)
+    result = permutation_importance(
+        model, X_train, y_train,
+        n_repeats=10, random_state=42, n_jobs=-1,
+        scoring='roc_auc'
+    )
+    df = pd.DataFrame({
+        'Feature':   FEATURE_COLS,
+        'PI_mean':   result.importances_mean.round(4),
+        'PI_std':    result.importances_std.round(4),
+    }).sort_values('PI_mean', ascending=False).reset_index(drop=True)
+    df['Rank_PI'] = range(1, len(df) + 1)
+    return df
