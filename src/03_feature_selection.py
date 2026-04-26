@@ -151,3 +151,24 @@ def print_exclusion_rationale() -> None:
         print(f"  {var:<10} {label:<28} {reason}")
     print(f"\n  Final feature count: {len(FEATURE_COLS)}")
     print(f"  All retained features are BHW-collectible before delivery.")
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+def run_feature_selection() -> None:
+    print("=" * 65)
+    print("STAGE 3: FEATURE SELECTION ANALYSIS (DOCUMENTATION ONLY)")
+    print("=" * 65)
+    print("\n  ⚠  This module does NOT modify the feature set.")
+    print("  ⚠  Features are fixed in config.py based on domain knowledge.")
+    print("  ⚠  This module provides STATISTICAL EVIDENCE for panel defense.\n")
+
+    if not os.path.exists(X_TRAIN_PATH):
+        raise FileNotFoundError(
+            f"X_train.csv not found. Run 04_model_training.py first."
+        )
+
+    X_train = pd.read_csv(X_TRAIN_PATH)
+    y_train = pd.read_csv(Y_TRAIN_PATH).squeeze()
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+    print_exclusion_rationale()
