@@ -118,3 +118,29 @@ def select_threshold(oof_proba: np.ndarray, y_train: pd.Series) -> float:
     print(f"  [THRESHOLD] OOF F1     : {t_f1:.4f}")
 
     return threshold, cand_df
+# ─── Threshold Sensitivity Table ─────────────────────────────────────────────
+
+def build_sensitivity_table(oof_proba: np.ndarray,
+                             y_train: pd.Series,
+                             selected: float) -> pd.DataFrame:
+    """
+    Show model performance across a range of thresholds.
+    This table belongs in the thesis Results section as evidence for
+    the threshold selection rationale.
+    """
+    rows = []
+    for t in np.arange(0.10, 0.70, 0.05):
+        pred = (oof_proba >= t).astype(int)
+        prec = precision_score(y_train, pred, zero_division=0)
+        rec  = recall_score(y_train, pred, zero_division=0)
+        f1   = f1_score(y_train, pred, zero_division=0)
+        flagged = pred.sum()
+        rows.append({
+            'Threshold': round(t, 2),
+            'Precision': round(prec, 4),
+            'Recall':    round(rec, 4),
+            'F1':        round(f1, 4),
+            'Flagged_N': int(flagged),
+            'Selected':  '← SELECTED' if abs(t - selected) < 0.026 else '',
+        })
+    return pd.DataFrame(rows)
