@@ -54,3 +54,15 @@ def validate_seed_record(record: dict) -> None:
                 f"(expected {lo}–{hi}). Fix the seed record."
             )
 
+    if layer1.get('birth_order', 2) == 1 and layer1.get('birth_interval', 0) != 0:
+        raise ValueError("First-born (birth_order=1) must have birth_interval=0.")
+
+    if layer1.get('iron_supplement', 0) != 1 and layer1.get('iron_days', 0) > 0:
+        raise ValueError("iron_days > 0 requires iron_supplement = 1.")
+
+    anc = layer1.get('anc_first_timing', 0)
+    if not (0 <= anc <= 9):
+        raise ValueError(
+            f"anc_first_timing={anc} is out of valid range (0–9). "
+            f"Values 98/99 are DHS codes and must NOT be used in seed data."
+        )
