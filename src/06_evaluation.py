@@ -109,3 +109,24 @@ def evaluate_partition(name: str, proba: np.ndarray, y_true: pd.Series,
         'Threshold': threshold,
         'Referral_rate_%': round(pred.mean() * 100, 1),
     }
+
+# 2. Generalization Checks 
+
+def check_generalization(results: list) -> None:
+    """Flag overfitting if AUC or Recall drops across CV → Test → Unseen."""
+    rows = {r['Set']: r for r in results}
+    print(f"\n  {'═'*55}")
+    print(f"  GENERALIZATION CHECKS")
+    print(f"  {'═'*55}")
+
+    sets = ['10-Fold CV (OOF)', 'Test Set', 'Unseen Holdout']
+    present = [s for s in sets if s in rows]
+
+    if len(present) >= 2:
+        for i in range(len(present) - 1):
+            a, b = present[i], present[i+1]
+            auc_gap = abs(rows[a]['AUC'] - rows[b]['AUC'])
+            rec_gap = abs(rows[a]['Recall'] - rows[b]['Recall'])
+            print(f"\n  {a}  →  {b}")
+            print(f"    AUC gap   : {auc_gap:.4f}")
+            print(f"    Recall gap: {rec_gap:.4f}")
