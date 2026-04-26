@@ -193,3 +193,27 @@ def plot_threshold_analysis(oof_proba: np.ndarray, y_train: pd.Series,
                 dpi=150, bbox_inches='tight')
     plt.close()
     print(f"\n  [SAVED] threshold_analysis.png")
+    # ─── Main ────────────────────────────────────────────────────────────────────
+
+def run_threshold_validation() -> float:
+    print("=" * 65)
+    print("STAGE 5: THRESHOLD SELECTION AND VALIDATION")
+    print("=" * 65)
+    print("\n  ⚠  Threshold computed EXCLUSIVELY on OOF probabilities.")
+    print("  ⚠  Test and unseen data are NOT used here.")
+
+    pkg       = joblib.load(OOF_PATH)
+    oof_proba = pkg['oof_proba']
+    y_train   = pkg['y_train']
+
+    oof_auc = roc_auc_score(y_train, oof_proba)
+    print(f"\n  [OOF] OOF ROC-AUC: {oof_auc:.4f}")
+    print(f"  [OOF] OOF LBW rate: {y_train.mean()*100:.1f}% ({y_train.sum()} cases)")
+
+    threshold, cand_df = select_threshold(oof_proba, y_train)
+
+    sens_table = build_sensitivity_table(oof_proba, y_train, threshold)
+    print(f"\n  [SENSITIVITY] Threshold Sensitivity Table (OOF):")
+    print(sens_table.to_string(index=False))
+
+    plot_threshold_analysis(oof_proba, y_train, cand_df, threshold)
