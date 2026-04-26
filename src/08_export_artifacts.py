@@ -191,4 +191,14 @@ def run_export() -> None:
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
     meta = load_performance_metadata()
     save_artifact_manifest(verified, meta)
+    register_model_in_database(verified, meta)
 
+    print(f"\n  [EXPORT COMPLETE]")
+    print(f"  Prototype is ready. Start the API with:")
+    print(f"    cd {PROTO_DIR}")
+    print(f"    python app.py")
+
+
+if __name__ == "__main__":
+    run_export()
+    
