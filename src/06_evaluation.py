@@ -5,6 +5,21 @@
 #           Unseen) using the SAME threshold from 05. Also simulates Layer 2
 #           clinical escalation effects to answer RQ3 quantitatively.
 #
+# Input  : artifacts/model.pkl
+#          artifacts/threshold.pkl
+#          artifacts/oof_probabilities.pkl
+#          artifacts/split_data.pkl
+# Output : outputs/xgb_performance_summary.csv   (all metrics, all sets)
+#          outputs/evaluation_panels.png          (CM + ROC plots)
+#          outputs/layer2_simulation.csv          (RQ3 evidence)
+#          outputs/layer2_simulation.png          (RQ3 figure)
+#
+# CORRECTIONS vs. monolithic version:
+#   1. All 3 partitions evaluated with the SAME threshold
+#   2. Layer 2 clinical simulation added (RQ3 — previously missing entirely)
+#   3. Generalization gap checks with explicit pass/fail criteria
+#   4. No test/unseen data was used during threshold selection (verified)
+#
 # Connects to: 07_shap_analysis.py
 # --------------------------------------------------------------------
 
@@ -18,7 +33,8 @@ warnings.filterwarnings('ignore')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import (
-    MODEL_PATH, THRESHOLD_PATH, OOF_PATH, OUTPUTS_DIR, ARTIFACTS_DIR
+    MODEL_PATH, THRESHOLD_PATH, OOF_PATH, OUTPUTS_DIR,
+    ARTIFACTS_DIR, CLINICAL_THRESHOLDS
 )
 
 from sklearn.metrics import (
@@ -27,76 +43,49 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay, roc_curve
 )
 
-# 1. Partition Evaluation 
+
+# 1. Partition Evaluation
 
 def evaluate_partition(name: str, proba: np.ndarray, y_true: pd.Series,
-                        threshold: float, color: str,
-                        ax_cm, ax_roc) -> dict:
+                       threshold: float, color: str,
+                       ax_cm, ax_roc) -> dict:
     """Compute and display all metrics for one data partition."""
     pred = (proba >= threshold).astype(int)
-    cm   = confusion_matrix(y_true, pred)
+    cm = confusion_matrix(y_true, pred)
     tn, fp, fn, tp = cm.ravel()
 
-    acc  = accuracy_score(y_true, pred)
+    acc = accuracy_score(y_true, pred)
     prec = precision_score(y_true, pred, zero_division=0)
-    rec  = recall_score(y_true, pred, zero_division=0)
-    f1   = f1_score(y_true, pred, zero_division=0)
+    rec = recall_score(y_true, pred, zero_division=0)
+    f1 = f1_score(y_true, pred, zero_division=0)
     spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-    npv  = tn / (tn + fn) if (tn + fn) > 0 else 0.0   
-    auc  = roc_auc_score(y_true, proba)
+    npv = tn / (tn + fn) if (tn + fn) > 0 else 0.0  # negative predictive value
+    ppv = prec  # positive predictive value = precision
+    auc = roc_auc_score(y_true, proba)
 
-    print(f"\n  {'─'*55}")
+    print(f"\n  {'─' * 55}")
     print(f"  Partition: {name}  (threshold = {threshold:.4f})")
-    print(f"  TN={tn:>4}  FP={fp:>4}  |  Specificity (TNR) : {spec:.4f}")
-    print(f"  FN={fn:>4}  TP={tp:>4}  |  Recall     (TPR) : {rec:.4f}")
-
-    return {
-        'Set': name, 'AUC': auc, 'Accuracy': acc,
-        'Precision': prec, 'Recall': rec, 'F1': f1,
-        'Specificity': spec, 'NPV': npv,
-        'TN': tn, 'FP': fp, 'FN': fn, 'TP': tp,
-        'Threshold': threshold,
-        'Referral_rate_%': round(pred.mean() * 100, 1),
-    }
-
-# 1. Partition Evaluation 
-
-def evaluate_partition(name: str, proba: np.ndarray, y_true: pd.Series,
-                        threshold: float, color: str,
-                        ax_cm, ax_roc) -> dict:
-    """Compute and display all metrics for one data partition."""
-    pred = (proba >= threshold).astype(int)
-    cm   = confusion_matrix(y_true, pred)
-    tn, fp, fn, tp = cm.ravel()
-
-    acc  = accuracy_score(y_true, pred)
-    prec = precision_score(y_true, pred, zero_division=0)
-    rec  = recall_score(y_true, pred, zero_division=0)
-    f1   = f1_score(y_true, pred, zero_division=0)
-    spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-    npv  = tn / (tn + fn) if (tn + fn) > 0 else 0.0   
-    auc  = roc_auc_score(y_true, proba)
-
-    print(f"\n  {'─'*55}")
-    print(f"  Partition: {name}  (threshold = {threshold:.4f})")
-    print(f"  {'─'*55}")
+    print(f"  {'─' * 55}")
     print(f"  TN={tn:>4}  FP={fp:>4}  |  Specificity (TNR) : {spec:.4f}")
     print(f"  FN={fn:>4}  TP={tp:>4}  |  Recall     (TPR) : {rec:.4f}")
     print(f"  Accuracy  : {acc:.4f}    |  Precision  (PPV) : {prec:.4f}")
     print(f"  F1        : {f1:.4f}    |  NPV               : {npv:.4f}")
     print(f"  ROC-AUC   : {auc:.4f}")
-    print(f"  Referral rate (predicted positive): {pred.mean()*100:.1f}%")
+    print(f"  Referral rate (predicted positive): {pred.mean() * 100:.1f}%")
 
+    # Clinical interpretation
     if fn > 0:
         print(f"  ⚠  {fn} LBW cases MISSED (False Negatives) — high clinical cost")
     if fp > 0:
         print(f"  ℹ  {fp} unnecessary referrals (False Positives) — low clinical cost")
 
+    # Confusion matrix subplot
     ConfusionMatrixDisplay(cm, display_labels=['Normal', 'LBW']).plot(
         ax=ax_cm, cmap='Blues', colorbar=False
     )
     ax_cm.set_title(f'{name}\nCM (t={threshold:.3f})', fontweight='bold', fontsize=10)
 
+    # ROC subplot
     fpr, tpr, _ = roc_curve(y_true, proba)
     ax_roc.plot(fpr, tpr, color=color, lw=2, label=f'{name} AUC={auc:.4f}')
     ax_roc.scatter([1 - spec], [rec], color='red', s=80, zorder=5)
@@ -110,60 +99,65 @@ def evaluate_partition(name: str, proba: np.ndarray, y_true: pd.Series,
         'Referral_rate_%': round(pred.mean() * 100, 1),
     }
 
-# 2. Generalization Checks 
+
+# 2. Generalization Checks
 
 def check_generalization(results: list) -> None:
-    """Flag overfitting if AUC or Recall drops across CV → Test → Unseen."""
+    """
+    Flag overfitting if AUC or Recall drops more than acceptable tolerance
+    across CV → Test → Unseen.
+    These checks should appear in the thesis Results discussion.
+    """
     rows = {r['Set']: r for r in results}
-    print(f"\n  {'═'*55}")
+    print(f"\n  {'═' * 55}")
     print(f"  GENERALIZATION CHECKS")
-    print(f"  {'═'*55}")
+    print(f"  {'═' * 55}")
 
     sets = ['10-Fold CV (OOF)', 'Test Set', 'Unseen Holdout']
     present = [s for s in sets if s in rows]
 
     if len(present) >= 2:
         for i in range(len(present) - 1):
-            a, b = present[i], present[i+1]
+            a, b = present[i], present[i + 1]
             auc_gap = abs(rows[a]['AUC'] - rows[b]['AUC'])
             rec_gap = abs(rows[a]['Recall'] - rows[b]['Recall'])
-            print(f"\n  {a}  →  {b}")
-            print(f"    AUC gap   : {auc_gap:.4f}")
-            print(f"    Recall gap: {rec_gap:.4f}")
-
-            # 2. Generalization Checks 
-
-def check_generalization(results: list) -> None:
-    """Flag overfitting if AUC or Recall drops across CV → Test → Unseen."""
-    rows = {r['Set']: r for r in results}
-    print(f"\n  {'═'*55}")
-    print(f"  GENERALIZATION CHECKS")
-    print(f"  {'═'*55}")
-
-    sets = ['10-Fold CV (OOF)', 'Test Set', 'Unseen Holdout']
-    present = [s for s in sets if s in rows]
-
-    if len(present) >= 2:
-        for i in range(len(present) - 1):
-            a, b = present[i], present[i+1]
-            auc_gap = abs(rows[a]['AUC'] - rows[b]['AUC'])
-            rec_gap = abs(rows[a]['Recall'] - rows[b]['Recall'])
-            auc_ok  = auc_gap <= 0.10
-            rec_ok  = rec_gap <= 0.15
+            auc_ok = auc_gap <= 0.10
+            rec_ok = rec_gap <= 0.15
             print(f"\n  {a}  →  {b}")
             print(f"    AUC gap   : {auc_gap:.4f}  {'✓ OK' if auc_ok else '⚠ HIGH (>0.10) — investigate overfitting'}")
-            print(f"    Recall gap: {rec_gap:.4f}  {'✓ OK' if rec_ok else '⚠ HIGH (>0.15) — threshold may not generalize'}")
+            print(
+                f"    Recall gap: {rec_gap:.4f}  {'✓ OK' if rec_ok else '⚠ HIGH (>0.15) — threshold may not generalize'}")
 
     print(f"\n  NOTE: Modest generalization gap is EXPECTED at this sample size.")
     print(f"  A CV↔Unseen AUC gap ≤0.15 is acceptable for 1,700-row clinical data.")
 
-    # 3. Layer 2 Clinical Escalation Simulation (RQ3) 
+
+# 3. Layer 2 Clinical Escalation Simulation (RQ3)
 
 def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.DataFrame:
-    """Simulate the effect of Layer 2 clinical escalation on final recommendations."""
+    """
+    Simulate the effect of Layer 2 clinical escalation on final recommendations.
+
+    RQ3 asks: 'How does the Decision-Level Fusion framework influence the
+    final LBW risk classification?'
+
+    To answer RQ3 QUANTITATIVELY, we need to show:
+    (a) The distribution of cases across ML tiers (LOW / MEDIUM / HIGH)
+    (b) How many from each tier get escalated by Layer 2 clinical flags
+    (c) The final distribution of recommendations
+
+    Since the test set has no real BP/MUAC measurements (NDHS does not
+    record these), we simulate Layer 2 using prevalence-based sampling:
+    - MUAC < 23.5: ~15–20% of Filipino pregnant women (DOH prevalence data)
+    - BP ≥ 140/90: ~10–12% of Filipino pregnant women (DOH AO 2022-0012)
+
+    These are clearly labeled as SIMULATION in all outputs.
+    The prototype uses real measurements from BHW home visits.
+    """
     np.random.seed(42)
     n = len(proba_test)
 
+    # DYNAMICALLY assign ML risk tiers based on the calculated threshold
     ml_tiers = []
     for p in proba_test:
         if p >= threshold:
@@ -173,32 +167,12 @@ def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.D
         else:
             ml_tiers.append('LOW')
 
-    df = pd.DataFrame({
-        'ml_probability': proba_test,
-        'ml_tier':        ml_tiers
-    })
-    return df
-
-# 3. Layer 2 Clinical Escalation Simulation (RQ3) 
-
-def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.DataFrame:
-    """Simulate the effect of Layer 2 clinical escalation on final recommendations."""
-    np.random.seed(42)
-    n = len(proba_test)
-
-    ml_tiers = []
-    for p in proba_test:
-        if p >= threshold:
-            ml_tiers.append('HIGH')
-        elif p >= (threshold / 2.0):
-            ml_tiers.append('MEDIUM')
-        else:
-            ml_tiers.append('LOW')
-
-    muac_flag = np.random.binomial(1, 0.175, n).astype(bool)   
-    bp_flag   = np.random.binomial(1, 0.110, n).astype(bool)   
+    # Simulate Layer 2 flags (prevalence-based)
+    muac_flag = np.random.binomial(1, 0.175, n).astype(bool)  # ~17.5% MUAC < 23.5
+    bp_flag = np.random.binomial(1, 0.110, n).astype(bool)  # ~11.0% BP ≥ 140/90
     any_critical = muac_flag | bp_flag
 
+    # Apply decision fusion logic
     final_levels = []
     for ml, critical in zip(ml_tiers, any_critical):
         if critical:
@@ -208,154 +182,215 @@ def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.D
 
     df = pd.DataFrame({
         'ml_probability': proba_test,
-        'ml_tier':        ml_tiers,
-        'muac_flag':      muac_flag,
-        'bp_flag':        bp_flag,
-        'any_critical':   any_critical,
-        'final_level':    final_levels,
+        'ml_tier': ml_tiers,
+        'muac_flag': muac_flag,
+        'bp_flag': bp_flag,
+        'any_critical': any_critical,
+        'final_level': final_levels,
     })
 
-    total     = len(df)
+    # Summary
+    total = len(df)
     escalated = df['any_critical'].sum()
     print(f"\n  [RQ3 SIMULATION] Layer 2 Clinical Escalation (n={total})")
-    print(f"  MUAC < 23.5 cm triggered : {muac_flag.sum():4d} ({muac_flag.mean()*100:.1f}%)")
-    print(f"  BP ≥ 140/90 triggered    : {bp_flag.sum():4d} ({bp_flag.mean()*100:.1f}%)")
-    print(f"  Any critical flag        : {escalated:4d} ({escalated/total*100:.1f}%)")
-    
-    xtab = pd.crosstab(df['ml_tier'], df['any_critical'], rownames=['ML Tier'], colnames=['Escalated'])
+    print(f"   SIMULATION using DOH prevalence rates — not real measurements")
+    print(f"  {'─' * 55}")
+    print(f"  MUAC < 23.5 cm triggered : {muac_flag.sum():4d} ({muac_flag.mean() * 100:.1f}%)")
+    print(f"  BP ≥ 140/90 triggered    : {bp_flag.sum():4d} ({bp_flag.mean() * 100:.1f}%)")
+    print(f"  Any critical flag        : {escalated:4d} ({escalated / total * 100:.1f}%)")
+    print(f"\n  Cross-tab: ML Tier × Escalation → Final Level")
+    xtab = pd.crosstab(df['ml_tier'], df['any_critical'],
+                       rownames=['ML Tier'], colnames=['Escalated'])
     xtab.columns = ['Not Escalated', 'Escalated']
-    print(f"\n  Cross-tab: ML Tier × Escalation → Final Level\n{xtab.to_string()}")
-    print(f"\n  Final Level Distribution:\n{df['final_level'].value_counts().to_string()}")
+    print(xtab.to_string())
+
+    print(f"\n  Final Level Distribution:")
+    print(df['final_level'].value_counts().to_string())
 
     return df
 
+
 def plot_layer2_simulation(sim_df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    fig.suptitle('RQ3 — Layer 2 Decision-Level Fusion Effect', fontsize=12, fontweight='bold')
+    fig.suptitle(
+        'RQ3 — Layer 2 Decision-Level Fusion Effect\n'
+        '(Simulation using DOH prevalence-based clinical flag rates)',
+        fontsize=12, fontweight='bold'
+    )
 
+    # Left: ML tier distribution before escalation
     tier_counts = sim_df['ml_tier'].value_counts().reindex(['LOW', 'MEDIUM', 'HIGH'], fill_value=0)
-    colors_ml   = ['#70AD47', '#FFC000', '#FF0000']
+    colors_ml = ['#70AD47', '#FFC000', '#FF0000']
     axes[0].bar(tier_counts.index, tier_counts.values, color=colors_ml, edgecolor='white')
     axes[0].set_title('Layer 1 ML Risk Tier Distribution', fontweight='bold')
-    
+    axes[0].set_ylabel('Number of Cases')
+    for i, (v, c) in enumerate(zip(tier_counts.values, tier_counts.index)):
+        axes[0].text(i, v + 1, str(v), ha='center', fontweight='bold', fontsize=10)
+    axes[0].grid(axis='y', linestyle='--', alpha=0.4)
+
+    # Right: Final level after Layer 2 fusion
     final_counts = sim_df['final_level'].value_counts()
-    color_map    = {
-        'HIGH RISK (ML only)':                '#FF0000',
-        'MEDIUM RISK (ML only)':              '#FFC000',
-        'LOW RISK (ML only)':                 '#70AD47',
+    color_map = {
+        'HIGH RISK (ML only)': '#FF0000',
+        'MEDIUM RISK (ML only)': '#FFC000',
+        'LOW RISK (ML only)': '#70AD47',
         'HIGH PRIORITY REFERRAL (Escalated)': '#C00000',
     }
     bar_colors = [color_map.get(k, '#4472C4') for k in final_counts.index]
-    axes[1].barh(range(len(final_counts)), final_counts.values, color=bar_colors, edgecolor='white')
+    axes[1].barh(range(len(final_counts)), final_counts.values,
+                 color=bar_colors, edgecolor='white')
     axes[1].set_yticks(range(len(final_counts)))
     axes[1].set_yticklabels([k[:35] for k in final_counts.index], fontsize=8)
     axes[1].set_title('Final Level After Layer 2 Escalation', fontweight='bold')
+    axes[1].set_xlabel('Number of Cases')
+    axes[1].grid(axis='x', linestyle='--', alpha=0.4)
+    for i, v in enumerate(final_counts.values):
+        axes[1].text(v + 0.5, i, str(v), va='center', fontsize=9)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUTS_DIR, 'layer2_simulation.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'layer2_simulation.png'),
+                dpi=150, bbox_inches='tight')
     plt.close()
+    print(f"  [SAVED] layer2_simulation.png")
 
-    # 4. Main 
+
+# 4. Full Evaluation Panels
+
+def plot_evaluation_panels(sets: list) -> None:
+    """
+    Multi-panel figure: Confusion matrices + ROC curves for all partitions.
+    """
+    n = len(sets)
+    fig = plt.figure(figsize=(7 * n, 10))
+    colors = ['#4472C4', '#ED7D31', '#70AD47']
+
+    ax_cms = [fig.add_subplot(2, n, i + 1) for i in range(n)]
+    ax_rocs = [fig.add_subplot(2, n, n + i + 1) for i in range(n)]
+
+    fig.suptitle(
+        'Model Evaluation — All Partitions\n'
+        f'Same threshold applied consistently to CV/Test/Unseen',
+        fontsize=13, fontweight='bold'
+    )
+
+    # ROC shared config
+    for ax in ax_rocs:
+        ax.plot([0, 1], [0, 1], 'k--', lw=1, alpha=0.5)
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive Rate')
+        ax.grid(linestyle='--', alpha=0.3)
+
+    return ax_cms, ax_rocs, colors
+
+
+#  Main
 
 def run_evaluation() -> None:
     print("STAGE 6: FULL MODEL EVALUATION")
-    pass
+
+    model = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+    oof_pkg = joblib.load(OOF_PATH)
+    splits = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
+
+    oof_proba = oof_pkg['oof_proba']
+    y_train = oof_pkg['y_train']
+    X_train = splits['X_train']
+    X_test = splits['X_test'];
+    y_test = splits['y_test']
+    X_unseen = splits['X_unseen'];
+    y_unseen = splits['y_unseen']
+
+    proba_test = model.predict_proba(X_test)[:, 1]
+    proba_unseen = model.predict_proba(X_unseen)[:, 1]
+
+    print(f"\n  [CONFIG] Threshold = {threshold:.4f} (from 05_threshold_validation.py)")
+    print(f"  [CONFIG] Applied IDENTICALLY to all three partitions")
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+    # Set up figure
+    n_sets = 3
+    fig = plt.figure(figsize=(21, 10))
+    colors = ['#4472C4', '#ED7D31', '#70AD47']
+    ax_cms = [fig.add_subplot(2, n_sets, i + 1) for i in range(n_sets)]
+    ax_rocs = [fig.add_subplot(2, n_sets, n_sets + i + 1) for i in range(n_sets)]
+    fig.suptitle(
+        f'AIKONIC Model Evaluation — Three Partitions (threshold={threshold:.4f})',
+        fontsize=13, fontweight='bold'
+    )
+    for ax in ax_rocs:
+        ax.plot([0, 1], [0, 1], 'k--', lw=1, alpha=0.5)
+        ax.set_xlabel('FPR');
+        ax.set_ylabel('TPR')
+        ax.grid(linestyle='--', alpha=0.3)
+
+    # Evaluate all three partitions
+    print(f"\n  {'═' * 55}")
+    print(f"  EVALUATION RESULTS")
+    print(f"  {'═' * 55}")
+
+    results = []
+
+    # OOF (CV)
+    oof_result = evaluate_partition(
+        '10-Fold CV (OOF)', oof_proba, y_train, threshold,
+        colors[0], ax_cms[0], ax_rocs[0]
+    )
+    results.append(oof_result)
+
+    # Test
+    test_result = evaluate_partition(
+        'Test Set', proba_test, y_test, threshold,
+        colors[1], ax_cms[1], ax_rocs[1]
+    )
+    results.append(test_result)
+
+    # Unseen (sealed)
+    unseen_result = evaluate_partition(
+        'Unseen Holdout', proba_unseen, y_unseen, threshold,
+        colors[2], ax_cms[2], ax_rocs[2]
+    )
+    results.append(unseen_result)
+
+    # Add shared ROC legend
+    for ax in ax_rocs:
+        ax.legend(fontsize=8)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'evaluation_panels.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"\n  [SAVED] evaluation_panels.png")
+
+    # Summary table
+    summary = pd.DataFrame(results)
+    metric_cols = ['Set', 'AUC', 'Accuracy', 'Precision', 'Recall', 'F1',
+                   'Specificity', 'NPV', 'TN', 'FP', 'FN', 'TP',
+                   'Threshold', 'Referral_rate_%']
+    summary = summary[metric_cols]
+    print(f"\n  {'═' * 65}")
+    print(f"  PERFORMANCE SUMMARY TABLE")
+    print(f"  {'═' * 65}")
+    print(summary.round(4).to_string(index=False))
+    summary.to_csv(os.path.join(OUTPUTS_DIR, 'xgb_performance_summary.csv'), index=False)
+    print(f"\n  [SAVED] xgb_performance_summary.csv")
+
+    # Generalization checks
+    check_generalization(results)
+
+    # Layer 2 simulation (RQ3)
+
+    print(f"  RQ3: LAYER 2 CLINICAL ESCALATION SIMULATION")
+   
+    sim_df = simulate_layer2_escalation(proba_test, threshold)
+    sim_df.to_csv(os.path.join(OUTPUTS_DIR, 'layer2_simulation.csv'), index=False)
+    print(f"  [SAVED] layer2_simulation.csv")
+    plot_layer2_simulation(sim_df)
+
+    print(f"\n  [EVALUATION COMPLETE]")
+    print(f"  All outputs saved to: {OUTPUTS_DIR}")
+
 
 if __name__ == "__main__":
     run_evaluation()
-
-    def run_evaluation() -> None:
-    print("STAGE 6: FULL MODEL EVALUATION")
-    
-    model     = joblib.load(MODEL_PATH)
-    threshold = joblib.load(THRESHOLD_PATH)
-    oof_pkg   = joblib.load(OOF_PATH)
-    splits    = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
-
-    oof_proba = oof_pkg['oof_proba']
-    y_train   = oof_pkg['y_train']
-    X_test    = splits['X_test'];  y_test   = splits['y_test']
-    X_unseen  = splits['X_unseen'];y_unseen = splits['y_unseen']
-
-    proba_test   = model.predict_proba(X_test)[:, 1]
-    proba_unseen = model.predict_proba(X_unseen)[:, 1]
-
-    os.makedirs(OUTPUTS_DIR, exist_ok=True)
-
-
-    def run_evaluation() -> None:
-    print("STAGE 6: FULL MODEL EVALUATION")
-    
-    model     = joblib.load(MODEL_PATH)
-    threshold = joblib.load(THRESHOLD_PATH)
-    oof_pkg   = joblib.load(OOF_PATH)
-    splits    = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
-
-    oof_proba = oof_pkg['oof_proba']
-    y_train   = oof_pkg['y_train']
-    X_test    = splits['X_test'];  y_test   = splits['y_test']
-    X_unseen  = splits['X_unseen'];y_unseen = splits['y_unseen']
-
-    proba_test   = model.predict_proba(X_test)[:, 1]
-    proba_unseen = model.predict_proba(X_unseen)[:, 1]
-
-    os.makedirs(OUTPUTS_DIR, exist_ok=True)
-
-    n_sets  = 3
-    fig     = plt.figure(figsize=(21, 10))
-    colors  = ['#4472C4', '#ED7D31', '#70AD47']
-    ax_cms  = [fig.add_subplot(2, n_sets, i + 1) for i in range(n_sets)]
-    ax_rocs = [fig.add_subplot(2, n_sets, n_sets + i + 1) for i in range(n_sets)]
-    
-    results = []
-    results.append(evaluate_partition('10-Fold CV (OOF)', oof_proba, y_train, threshold, colors[0], ax_cms[0], ax_rocs[0]))
-    results.append(evaluate_partition('Test Set', proba_test, y_test, threshold, colors[1], ax_cms[1], ax_rocs[1]))
-    results.append(evaluate_partition('Unseen Holdout', proba_unseen, y_unseen, threshold, colors[2], ax_cms[2], ax_rocs[2]))
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUTS_DIR, 'evaluation_panels.png'), dpi=150, bbox_inches='tight')
-    plt.close()
-
-    def run_evaluation() -> None:
-    print("STAGE 6: FULL MODEL EVALUATION")
-    
-    model     = joblib.load(MODEL_PATH)
-    threshold = joblib.load(THRESHOLD_PATH)
-    oof_pkg   = joblib.load(OOF_PATH)
-    splits    = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
-
-    oof_proba = oof_pkg['oof_proba']
-    y_train   = oof_pkg['y_train']
-    X_test    = splits['X_test'];  y_test   = splits['y_test']
-    X_unseen  = splits['X_unseen'];y_unseen = splits['y_unseen']
-
-    proba_test   = model.predict_proba(X_test)[:, 1]
-    proba_unseen = model.predict_proba(X_unseen)[:, 1]
-
-    os.makedirs(OUTPUTS_DIR, exist_ok=True)
-
-    n_sets  = 3
-    fig     = plt.figure(figsize=(21, 10))
-    colors  = ['#4472C4', '#ED7D31', '#70AD47']
-    ax_cms  = [fig.add_subplot(2, n_sets, i + 1) for i in range(n_sets)]
-    ax_rocs = [fig.add_subplot(2, n_sets, n_sets + i + 1) for i in range(n_sets)]
-    
-    results = []
-    results.append(evaluate_partition('10-Fold CV (OOF)', oof_proba, y_train, threshold, colors[0], ax_cms[0], ax_rocs[0]))
-    results.append(evaluate_partition('Test Set', proba_test, y_test, threshold, colors[1], ax_cms[1], ax_rocs[1]))
-    results.append(evaluate_partition('Unseen Holdout', proba_unseen, y_unseen, threshold, colors[2], ax_cms[2], ax_rocs[2]))
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUTS_DIR, 'evaluation_panels.png'), dpi=150, bbox_inches='tight')
-    plt.close()
-
-    summary = pd.DataFrame(results)
-    summary.to_csv(os.path.join(OUTPUTS_DIR, 'xgb_performance_summary.csv'), index=False)
-
-    check_generalization(results)
-
-    sim_df = simulate_layer2_escalation(proba_test, threshold)
-    sim_df.to_csv(os.path.join(OUTPUTS_DIR, 'layer2_simulation.csv'), index=False)
-    plot_layer2_simulation(sim_df)
-    
-    print("\n  [EVALUATION COMPLETE]")
