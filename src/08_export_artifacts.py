@@ -115,3 +115,34 @@ def load_performance_metadata() -> dict:
     else:
         print(f"  [META] xgb_performance_summary.csv not found — metrics omitted from manifest.")
     return meta
+
+# Artifact Manifest 
+
+def save_artifact_manifest(verified: dict, meta: dict) -> None:
+    """Save a JSON manifest documenting the full artifact bundle."""
+    manifest = {
+        'project':         'AIKONIC — LBW Risk Prediction',
+        'model_version':   'v1.0',
+        'created_at':      datetime.now().isoformat(),
+        'threshold':       verified['threshold'],
+        'n_features':      len(verified['features']),
+        'feature_list':    verified['features'],
+        'artifacts_bundled': ['model.pkl', 'threshold.pkl', 'features.json'],
+        'prototype_dir':   PROTO_DIR,
+        'performance':     meta,
+        'notes': (
+            'threshold.pkl is separate from model.pkl by design — allows '
+            'recalibration without retraining. features.json enforces '
+            'schema validation in the prototype input form.'
+        ),
+    }
+    manifest_path = os.path.join(OUTPUTS_DIR, 'artifact_manifest.json')
+    with open(manifest_path, 'w') as f:
+        json.dump(manifest, f, indent=2)
+    print(f"\n  [SAVED] artifact_manifest.json")
+    print(f"    Threshold   : {verified['threshold']:.4f}")
+    print(f"    Features    : {len(verified['features'])}")
+    if meta:
+        for name, m in meta.items():
+            print(f"    {name:<25} ROC-AUC={m.get('ROC_AUC', 0):.4f}  PR-AUC={m.get('PR_AUC', 0):.4f}  Recall={m.get('Recall', 0):.4f}")
+
