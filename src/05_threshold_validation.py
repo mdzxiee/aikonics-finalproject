@@ -239,3 +239,6 @@ def run_threshold_validation() -> float:
     print(f"  [SUMMARY] This threshold will be applied IDENTICALLY to")
     print(f"            CV (OOF), Test, and Unseen sets in 06_evaluation.py.")
     return threshold
+
+if __name__ == "__main__":
+    run_threshold_validation()
