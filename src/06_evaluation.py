@@ -254,3 +254,12 @@ def plot_layer2_simulation(sim_df: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.savefig(os.path.join(OUTPUTS_DIR, 'layer2_simulation.png'), dpi=150, bbox_inches='tight')
     plt.close()
+
+    # 4. Main 
+
+def run_evaluation() -> None:
+    print("STAGE 6: FULL MODEL EVALUATION")
+    pass
+
+if __name__ == "__main__":
+    run_evaluation()
