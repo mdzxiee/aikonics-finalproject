@@ -208,12 +208,14 @@ def check_generalization(results: list) -> None:
         if a not in by_name or b not in by_name:
             continue
         auc_gap = abs(by_name[a]['ROC_AUC']      - by_name[b]['ROC_AUC'])
+        prauc_gap = abs(by_name[a]['PR_AUC']       - by_name[b]['PR_AUC'])
         rec_gap = abs(by_name[a]['Recall_(TPR)'] - by_name[b]['Recall_(TPR)'])
         f1_gap  = abs(by_name[a]['F1_Score']     - by_name[b]['F1_Score'])
 
         print(f"\n  {a}  →  {b}")
         print(f"    ROC-AUC gap : {auc_gap:.4f}  "
               f"{'✓ PASS' if auc_gap <= auc_tol else f'⚠  FAIL (>{auc_tol}) — investigate overfitting'}")
+        print(f"    PR-AUC gap  : {prauc_gap:.4f}")  
         print(f"    Recall gap  : {rec_gap:.4f}  "
               f"{'✓ PASS' if rec_gap <= rec_tol else f'⚠  FAIL (>{rec_tol}) — threshold instability'}")
         print(f"    F1 gap      : {f1_gap:.4f}")
