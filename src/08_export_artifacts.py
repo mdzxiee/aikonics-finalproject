@@ -177,3 +177,16 @@ def register_model_in_database(verified: dict, meta: dict) -> None:
         ))
         conn.commit()
     print(f"\n  [DB] Model registered in model_registry (is_active=1)")
+
+#  Main 
+
+def run_export() -> None:
+    print("=" * 65)
+    print("STAGE 8: ARTIFACT EXPORT AND PROTOTYPE PACKAGING")
+    print("=" * 65)
+
+    verified = verify_artifacts()
+    copy_to_prototype()
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
