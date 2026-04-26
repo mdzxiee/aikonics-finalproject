@@ -198,8 +198,7 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
     try:
         from predictor      import get_predictor
         from clinical_flags import apply_decision_fusion
-    except ImportError as e:
-        print(f"  [SKIP] Could not import prototype modules: {e}")
+    except ImportError:
         return
 
     predictor = get_predictor()
@@ -208,7 +207,7 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
     for i, rec in enumerate(records, start=1):
         try:
             validate_seed_record(rec)
-        except ValueError as e:
+        except ValueError:
             continue
 
         ml_result = predictor.predict(rec['layer1'])
@@ -225,12 +224,30 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
             INSERT INTO patients
                 (bhw_id, full_name, barangay, municipality, region, residence_type)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            bhw_id,
-            rec['patient']['full_name'],
-            rec['patient']['barangay'],
-            rec['patient']['municipality'],
-            rec['layer1']['region'],
-            rec['layer1']['residence_type'],
-        ))
+        """, (bhw_id, rec['patient']['full_name'], rec['patient']['barangay'],
+              rec['patient']['municipality'], rec['layer1']['region'], rec['layer1']['residence_type']))
         patient_id = cur.lastrowid
+
+        shap_json = json.dumps(result.get('shap_top_features', []))
+        cur2 = conn.execute("""
+            INSERT INTO assessments (
+                patient_id, bhw_id,
+                maternal_age, education_yrs, wealth_score, birth_order,
+                birth_interval, residence_type, region, anc_first_timing,
+                iron_supplement, iron_days, tetanus_shots, marital_status,
+                household_size, bp_systolic, bp_diastolic, muac_cm, weight_kg, height_cm,
+                gestational_weeks, ml_probability, ml_risk_tier, final_risk_level,
+                escalated, shap_top_features, referral_recommended
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            patient_id, bhw_id, rec['layer1']['maternal_age'], rec['layer1']['education_yrs'],
+            rec['layer1']['wealth_score'], rec['layer1']['birth_order'], rec['layer1']['birth_interval'],
+            rec['layer1']['residence_type'], rec['layer1']['region'], rec['layer1']['anc_first_timing'],
+            rec['layer1']['iron_supplement'], rec['layer1']['iron_days'], rec['layer1']['tetanus_shots'],
+            rec['layer1']['marital_status'], rec['layer1']['household_size'], l2.get('bp_systolic'),
+            l2.get('bp_diastolic'), l2.get('muac_cm'), l2.get('weight_kg'), l2.get('height_cm'),
+            l2.get('gestational_weeks'), result['ml_probability'], result['ml_risk_tier'],
+            result['final_risk_level'], int(result['escalated']), shap_json,
+            1 if 'REFERRAL' in result['final_risk_level'] else 0,
+        ))
+        assessment_id = cur2.lastrowid
