@@ -38,3 +38,19 @@ def initialize_db() -> sqlite3.Connection:
     conn.commit()
     print(f"  [DB] Schema initialized: {DB_PATH}")
     return conn
+
+# Validate Seed Data 
+
+def validate_seed_record(record: dict) -> None:
+    """Validate a seed record against NDHS_RANGES before insertion."""
+    layer1 = record['layer1']
+    for feat, val in layer1.items():
+        if feat not in NDHS_RANGES or val is None:
+            continue
+        lo, hi = NDHS_RANGES[feat]
+        if not (lo <= val <= hi):
+            raise ValueError(
+                f"Seed data OUT OF NDHS RANGE: {feat}={val} "
+                f"(expected {lo}–{hi}). Fix the seed record."
+            )
+
