@@ -263,3 +263,21 @@ def run_evaluation() -> None:
 
 if __name__ == "__main__":
     run_evaluation()
+
+    def run_evaluation() -> None:
+    print("STAGE 6: FULL MODEL EVALUATION")
+    
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+    oof_pkg   = joblib.load(OOF_PATH)
+    splits    = joblib.load(os.path.join(ARTIFACTS_DIR, "split_data.pkl"))
+
+    oof_proba = oof_pkg['oof_proba']
+    y_train   = oof_pkg['y_train']
+    X_test    = splits['X_test'];  y_test   = splits['y_test']
+    X_unseen  = splits['X_unseen'];y_unseen = splits['y_unseen']
+
+    proba_test   = model.predict_proba(X_test)[:, 1]
+    proba_unseen = model.predict_proba(X_unseen)[:, 1]
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
