@@ -21,3 +21,14 @@ from config import (
     X_TEST_PATH, Y_TEST_PATH, X_UNSEEN_PATH, Y_UNSEEN_PATH
 )
 
+# 1. TreeExplainer Setup 
+
+def get_explainer(model) -> shap.TreeExplainer:
+    """Build SHAP TreeExplainer with tree_path_dependent perturbation."""
+    explainer = shap.TreeExplainer(
+        model,
+        feature_perturbation='tree_path_dependent'
+    )
+    return explainer
+
+
