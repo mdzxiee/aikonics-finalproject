@@ -95,3 +95,23 @@ def copy_to_prototype() -> None:
     for src, dst in copies:
         shutil.copy2(src, dst)
         print(f"    Copied: {os.path.basename(src)}")
+
+#  Load Performance Metadata 
+
+def load_performance_metadata() -> dict:
+    """Load key metrics from evaluation for the artifact manifest."""
+    perf_path = os.path.join(OUTPUTS_DIR, 'xgb_performance_summary.csv')
+    meta = {}
+    if os.path.exists(perf_path):
+        df = pd.read_csv(perf_path)
+        for _, row in df.iterrows():
+            s = str(row.get('Partition', '')).replace(' ', '_').replace('(', '').replace(')', '')
+            meta[s] = {
+                'ROC_AUC': round(float(row.get('ROC_AUC', 0)), 4),
+                'PR_AUC':  round(float(row.get('PR_AUC', 0)), 4),
+                'Recall':  round(float(row.get('Recall_(TPR)', 0)), 4),
+                'F1':      round(float(row.get('F1_Score', 0)), 4),
+            }
+    else:
+        print(f"  [META] xgb_performance_summary.csv not found — metrics omitted from manifest.")
+    return meta
