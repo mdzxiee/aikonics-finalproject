@@ -178,3 +178,53 @@ def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.D
         'ml_tier':        ml_tiers
     })
     return df
+
+# 3. Layer 2 Clinical Escalation Simulation (RQ3) 
+
+def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.DataFrame:
+    """Simulate the effect of Layer 2 clinical escalation on final recommendations."""
+    np.random.seed(42)
+    n = len(proba_test)
+
+    ml_tiers = []
+    for p in proba_test:
+        if p >= threshold:
+            ml_tiers.append('HIGH')
+        elif p >= (threshold / 2.0):
+            ml_tiers.append('MEDIUM')
+        else:
+            ml_tiers.append('LOW')
+
+    muac_flag = np.random.binomial(1, 0.175, n).astype(bool)   
+    bp_flag   = np.random.binomial(1, 0.110, n).astype(bool)   
+    any_critical = muac_flag | bp_flag
+
+    final_levels = []
+    for ml, critical in zip(ml_tiers, any_critical):
+        if critical:
+            final_levels.append('HIGH PRIORITY REFERRAL (Escalated)')
+        else:
+            final_levels.append(f'{ml} RISK (ML only)')
+
+    df = pd.DataFrame({
+        'ml_probability': proba_test,
+        'ml_tier':        ml_tiers,
+        'muac_flag':      muac_flag,
+        'bp_flag':        bp_flag,
+        'any_critical':   any_critical,
+        'final_level':    final_levels,
+    })
+
+    total     = len(df)
+    escalated = df['any_critical'].sum()
+    print(f"\n  [RQ3 SIMULATION] Layer 2 Clinical Escalation (n={total})")
+    print(f"  MUAC < 23.5 cm triggered : {muac_flag.sum():4d} ({muac_flag.mean()*100:.1f}%)")
+    print(f"  BP ≥ 140/90 triggered    : {bp_flag.sum():4d} ({bp_flag.mean()*100:.1f}%)")
+    print(f"  Any critical flag        : {escalated:4d} ({escalated/total*100:.1f}%)")
+    
+    xtab = pd.crosstab(df['ml_tier'], df['any_critical'], rownames=['ML Tier'], colnames=['Escalated'])
+    xtab.columns = ['Not Escalated', 'Escalated']
+    print(f"\n  Cross-tab: ML Tier × Escalation → Final Level\n{xtab.to_string()}")
+    print(f"\n  Final Level Distribution:\n{df['final_level'].value_counts().to_string()}")
+
+    return df
