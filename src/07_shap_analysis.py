@@ -222,3 +222,28 @@ def run_shap_analysis() -> None:
     shap_values, ranking_df = compute_global_shap(model, X_test, y_test)
     ranking_df.to_csv(os.path.join(OUTPUTS_DIR, 'shap_global_ranking.csv'), index=False)
     print(f"\n  [SAVED] shap_global_ranking.csv  (RQ1 evidence)")
+
+def run_shap_analysis() -> None:
+    print("=" * 65)
+    print("STAGE 7: SHAP EXPLAINABILITY ANALYSIS")
+    print("=" * 65)
+
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+
+    X_test   = pd.read_csv(X_TEST_PATH)
+    y_test   = pd.read_csv(Y_TEST_PATH).squeeze()
+    X_unseen = pd.read_csv(X_UNSEEN_PATH)
+    y_unseen = pd.read_csv(Y_UNSEEN_PATH).squeeze()
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+    print(f"\n  [DATA] X_test : {X_test.shape}  | LBW: {y_test.sum()} cases")
+    print(f"  [DATA] X_unseen: {X_unseen.shape} | LBW: {y_unseen.sum()} cases")
+
+    shap_values, ranking_df = compute_global_shap(model, X_test, y_test)
+    ranking_df.to_csv(os.path.join(OUTPUTS_DIR, 'shap_global_ranking.csv'), index=False)
+    print(f"\n  [SAVED] shap_global_ranking.csv  (RQ1 evidence)")
+
+    plot_shap_bar(ranking_df)
+    plot_beeswarm(shap_values, X_test)
