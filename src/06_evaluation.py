@@ -26,3 +26,35 @@ from sklearn.metrics import (
     recall_score, f1_score, confusion_matrix,
     ConfusionMatrixDisplay, roc_curve
 )
+
+# 1. Partition Evaluation 
+
+def evaluate_partition(name: str, proba: np.ndarray, y_true: pd.Series,
+                        threshold: float, color: str,
+                        ax_cm, ax_roc) -> dict:
+    """Compute and display all metrics for one data partition."""
+    pred = (proba >= threshold).astype(int)
+    cm   = confusion_matrix(y_true, pred)
+    tn, fp, fn, tp = cm.ravel()
+
+    acc  = accuracy_score(y_true, pred)
+    prec = precision_score(y_true, pred, zero_division=0)
+    rec  = recall_score(y_true, pred, zero_division=0)
+    f1   = f1_score(y_true, pred, zero_division=0)
+    spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+    npv  = tn / (tn + fn) if (tn + fn) > 0 else 0.0   
+    auc  = roc_auc_score(y_true, proba)
+
+    print(f"\n  {'─'*55}")
+    print(f"  Partition: {name}  (threshold = {threshold:.4f})")
+    print(f"  TN={tn:>4}  FP={fp:>4}  |  Specificity (TNR) : {spec:.4f}")
+    print(f"  FN={fn:>4}  TP={tp:>4}  |  Recall     (TPR) : {rec:.4f}")
+
+    return {
+        'Set': name, 'AUC': auc, 'Accuracy': acc,
+        'Precision': prec, 'Recall': rec, 'F1': f1,
+        'Specificity': spec, 'NPV': npv,
+        'TN': tn, 'FP': fp, 'FN': fn, 'TP': tp,
+        'Threshold': threshold,
+        'Referral_rate_%': round(pred.mean() * 100, 1),
+    }
