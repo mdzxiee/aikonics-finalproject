@@ -281,3 +281,51 @@ def run_shap_analysis() -> None:
         model, X_unseen, y_unseen, threshold,
         label='fn', filename='shap_waterfall_fn.png'
     )
+
+def run_shap_analysis() -> None:
+    print("=" * 65)
+    print("STAGE 7: SHAP EXPLAINABILITY ANALYSIS")
+    print("=" * 65)
+    print("\n  RQ1: Global feature importance → X_test (more stable sample)")
+    print("  RQ4: Individual waterfall   → X_unseen (sealed partition)")
+
+    model     = joblib.load(MODEL_PATH)
+    threshold = joblib.load(THRESHOLD_PATH)
+
+    X_test   = pd.read_csv(X_TEST_PATH)
+    y_test   = pd.read_csv(Y_TEST_PATH).squeeze()
+    X_unseen = pd.read_csv(X_UNSEEN_PATH)
+    y_unseen = pd.read_csv(Y_UNSEEN_PATH).squeeze()
+
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+    print(f"\n  [DATA] X_test : {X_test.shape}  | LBW: {y_test.sum()} cases")
+    print(f"  [DATA] X_unseen: {X_unseen.shape} | LBW: {y_unseen.sum()} cases")
+    print(f"  [SHAP] feature_perturbation = tree_path_dependent (NaN-safe)")
+
+    shap_values, ranking_df = compute_global_shap(model, X_test, y_test)
+    ranking_df.to_csv(os.path.join(OUTPUTS_DIR, 'shap_global_ranking.csv'), index=False)
+    print(f"\n  [SAVED] shap_global_ranking.csv  (RQ1 evidence)")
+
+    plot_shap_bar(ranking_df)
+    plot_beeswarm(shap_values, X_test)
+
+    plot_individual_waterfall(
+        model, X_unseen, y_unseen, threshold,
+        label='tp', filename='shap_waterfall_tp.png'
+    )
+    plot_individual_waterfall(
+        model, X_unseen, y_unseen, threshold,
+        label='fn', filename='shap_waterfall_fn.png'
+    )
+
+    cross_validate_importance(ranking_df)
+
+    print(f"\n  [SHAP ANALYSIS COMPLETE]")
+    print(f"  Outputs: shap_bar.png, shap_beeswarm.png,")
+    print(f"           shap_waterfall_tp.png, shap_waterfall_fn.png,")
+    print(f"           shap_global_ranking.csv")
+
+
+if __name__ == "__main__":
+    run_shap_analysis()
