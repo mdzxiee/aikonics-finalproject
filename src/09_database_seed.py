@@ -200,7 +200,6 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         from clinical_flags import apply_decision_fusion
     except ImportError as e:
         print(f"  [SKIP] Could not import prototype modules: {e}")
-        print(f"         Run 08_export_artifacts.py first to copy model to prototype/.")
         return
 
     predictor = get_predictor()
@@ -212,4 +211,15 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         except ValueError as e:
             print(f"  [SEED] Case {i} REJECTED: {e}")
             continue
+
+        ml_result = predictor.predict(rec['layer1'])
+
+        l2 = rec['layer2']
+        fusion = apply_decision_fusion(
+            ml_probability = ml_result['ml_probability'],
+            bp_systolic    = l2.get('bp_systolic'),
+            bp_diastolic   = l2.get('bp_diastolic'),
+            muac_cm        = l2.get('muac_cm'),
+        )
+        result = {**fusion, 'shap_top_features': ml_result['shap_top_features']}
 
