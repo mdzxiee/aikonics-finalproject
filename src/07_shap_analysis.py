@@ -149,3 +149,37 @@ def plot_shap_bar(ranking_df: pd.DataFrame) -> None:
                 dpi=150, bbox_inches='tight')
     plt.close()
     print(f"  [SAVED] shap_bar.png")
+
+# 6. SHAP vs. Permutation Importance Cross-Validation
+
+def cross_validate_importance(ranking_df: pd.DataFrame) -> None:
+    """Compare SHAP global ranking with permutation importance from 03."""
+    pi_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'outputs', 'feature_permutation_importance.csv'
+    )
+    if not os.path.exists(pi_path):
+        print(f"\n  [CROSS-VAL] feature_permutation_importance.csv not found.")
+        return
+
+    pi_df = pd.read_csv(pi_path)
+    merged = ranking_df[['Feature', 'Rank']].merge(
+        pi_df[['Feature', 'Rank_PI']], on='Feature', how='left'
+    )
+    merged['Rank_diff'] = (merged['Rank'] - merged['Rank_PI']).abs()
+    merged = merged.sort_values('Rank')
+
+    print(f"\n  [CROSS-VAL] SHAP vs Permutation Importance Ranking:")
+    print(f"  {'Feature':<24} {'SHAP Rank':>10} {'PI Rank':>10} {'|Diff|':>8}")
+    print(f"  {'-'*55}")
+    for _, row in merged.iterrows():
+        flag = ' ⚠' if row['Rank_diff'] > 5 else ''
+        pi_r = int(row['Rank_PI']) if not pd.isna(row['Rank_PI']) else 'N/A'
+        print(f"  {row['Feature']:<24} {int(row['Rank']):>10} {str(pi_r):>10} "
+              f"{int(row['Rank_diff']) if not pd.isna(row['Rank_diff']) else 'N/A':>8}{flag}")
+
+    large_diffs = merged[merged['Rank_diff'] > 5]
+    if len(large_diffs) > 0:
+        print(f"\n  ⚠  {len(large_diffs)} features with rank difference > 5.")
+    else:
+        print(f"\n  ✓ SHAP and PI rankings are broadly consistent (max diff ≤ 5).")
