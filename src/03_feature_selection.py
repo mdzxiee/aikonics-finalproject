@@ -44,3 +44,26 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import roc_auc_score
 import joblib
 
+# ─── Variance Inflation Factor ──────────────────────────────────────────────
+
+def compute_vif(X: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute VIF for each feature to detect multicollinearity.
+    VIF > 10: strong multicollinearity — potential redundancy.
+    VIF > 5 : moderate multicollinearity — monitor.
+    VIF < 5 : acceptable.
+
+    Note: VIF is an advisory metric only. XGBoost is robust to moderate
+    multicollinearity because it builds trees on feature subsets
+    (colsample_bytree=0.8). We do NOT drop features solely based on VIF.
+    """
+    from sklearn.linear_model import LinearRegression
+    X_imp = X.copy().fillna(X.median())
+    vif_data = []
+    for i, col in enumerate(X_imp.columns):
+        X_other = X_imp.drop(columns=[col])
+        y_col   = X_imp[col]
+        r2 = LinearRegression().fit(X_other, y_col).score(X_other, y_col)
+        vif = 1 / (1 - r2) if r2 < 1.0 else float('inf')
+        vif_data.append({'Feature': col, 'VIF': round(vif, 3)})
+    return pd.DataFrame(vif_data).sort_values('VIF', ascending=False)
