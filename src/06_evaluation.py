@@ -156,3 +156,25 @@ def check_generalization(results: list) -> None:
 
     print(f"\n  NOTE: Modest generalization gap is EXPECTED at this sample size.")
     print(f"  A CV↔Unseen AUC gap ≤0.15 is acceptable for 1,700-row clinical data.")
+
+    # 3. Layer 2 Clinical Escalation Simulation (RQ3) 
+
+def simulate_layer2_escalation(proba_test: np.ndarray, threshold: float) -> pd.DataFrame:
+    """Simulate the effect of Layer 2 clinical escalation on final recommendations."""
+    np.random.seed(42)
+    n = len(proba_test)
+
+    ml_tiers = []
+    for p in proba_test:
+        if p >= threshold:
+            ml_tiers.append('HIGH')
+        elif p >= (threshold / 2.0):
+            ml_tiers.append('MEDIUM')
+        else:
+            ml_tiers.append('LOW')
+
+    df = pd.DataFrame({
+        'ml_probability': proba_test,
+        'ml_tier':        ml_tiers
+    })
+    return df
