@@ -304,3 +304,22 @@ def run_database_seed() -> None:
 
     bhw_id = seed_bhw_user(conn)
     seed_assessments(conn, bhw_id)
+
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM assessments"
+    ).fetchone()
+    print(f"\n  [VERIFY] Total assessments in DB: {row['n']}")
+
+    flags_row = conn.execute(
+        "SELECT COUNT(*) AS n FROM clinical_flags"
+    ).fetchone()
+    print(f"  [VERIFY] Total clinical flags in DB: {flags_row['n']}")
+
+    conn.close()
+
+    print(f"\n  [SEED COMPLETE] Database: {DB_PATH}")
+    print(f"  Run prototype with: cd prototype && python app.py")
+
+
+if __name__ == "__main__":
+    run_database_seed()
