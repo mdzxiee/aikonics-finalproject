@@ -94,3 +94,33 @@ def compute_permutation_importance(X_train: pd.DataFrame,
     }).sort_values('PI_mean', ascending=False).reset_index(drop=True)
     df['Rank_PI'] = range(1, len(df) + 1)
     return df
+
+# ─── Correlation Heatmap ─────────────────────────────────────────────────────
+
+def plot_correlation_heatmap(X_train: pd.DataFrame) -> None:
+    X_imp = X_train.fillna(X_train.median())
+    corr  = X_imp.corr()
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+    im = ax.imshow(corr, cmap='coolwarm', vmin=-1, vmax=1)
+    plt.colorbar(im, ax=ax, shrink=0.8)
+    ax.set_xticks(range(len(corr.columns)))
+    ax.set_yticks(range(len(corr.columns)))
+    ax.set_xticklabels(corr.columns, rotation=45, ha='right', fontsize=9)
+    ax.set_yticklabels(corr.columns, fontsize=9)
+
+    for i in range(len(corr)):
+        for j in range(len(corr.columns)):
+            val = corr.iloc[i, j]
+            color = 'white' if abs(val) > 0.6 else 'black'
+            ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                    fontsize=7, color=color)
+
+    ax.set_title('Feature Correlation Heatmap (Training Set)\n'
+                 'For multicollinearity documentation only — no features dropped',
+                 fontweight='bold', fontsize=11)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'correlation_heatmap.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print("  [SAVED] correlation_heatmap.png")
