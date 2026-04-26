@@ -1,0 +1,4 @@
+Partition,Threshold,Referral_Rate_%,Recall_(TPR),PR_AUC,F1_Score,TP,FN_(Minimize!),Precision_(PPV),Specificity_(TNR),ROC_AUC,FP,TN,NPV,Accuracy_(last)
+10-Fold CV (OOF),0.5117,39.1,0.5,0.1771,0.2443,81,81,0.1617,0.6243,0.571,420,698,0.896,0.6086
+Test Set,0.5117,37.5,0.5588,0.1963,0.255,19,15,0.1652,0.6484,0.6287,96,177,0.9219,0.6384
+Unseen Holdout,0.5117,32.0,0.4444,0.1405,0.2162,8,10,0.1429,0.6943,0.529,48,109,0.916,0.6686
