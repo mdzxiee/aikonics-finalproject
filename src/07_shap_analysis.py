@@ -122,3 +122,30 @@ def plot_beeswarm(shap_values, X_test: pd.DataFrame) -> None:
                 dpi=150, bbox_inches='tight')
     plt.close()
     print(f"  [SAVED] shap_beeswarm.png")
+
+# 5. Global Importance Bar Plot (RQ1) 
+
+def plot_shap_bar(ranking_df: pd.DataFrame) -> None:
+    """Horizontal bar plot of mean |SHAP| per feature."""
+    fig, ax = plt.subplots(figsize=(9, 6))
+    sorted_df = ranking_df.sort_values('Mean_|SHAP|')
+    colors    = ['#C00000' if i == len(sorted_df) - 1 else '#4472C4'
+                 for i in range(len(sorted_df))]
+    ax.barh(sorted_df['Feature'], sorted_df['Mean_|SHAP|'],
+            color=colors, edgecolor='white')
+    ax.set_xlabel('Mean |SHAP Value|', fontsize=11)
+    ax.set_title(
+        'XGBoost Global Feature Importance via SHAP\n'
+        '(Answers RQ1: Which variables have highest predictive utility?)\n'
+        f'Computed on X_test ({sum(ranking_df["Rank"] > 0)} features)',
+        fontweight='bold', fontsize=11
+    )
+    ax.grid(axis='x', linestyle='--', alpha=0.4)
+    for i, (_, row) in enumerate(sorted_df.tail(3).iterrows()):
+        ax.text(row['Mean_|SHAP|'] + 0.0002, i + len(sorted_df) - 3,
+                f'#{int(row["Rank"])}', va='center', fontsize=8, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUTS_DIR, 'shap_bar.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  [SAVED] shap_bar.png")
