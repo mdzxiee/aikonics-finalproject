@@ -1,6 +1,3 @@
-# AIKONIC — CS 322 | LBW Risk Prediction
-# File: src/04_model_training.py
-#
 # Purpose : Group-based splitting → XGBoost training with StratifiedGroupKFold
 #           CV + early stopping → OOF probability generation → model artifact
 #           export + 6 CSV splits export.

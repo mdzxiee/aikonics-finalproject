@@ -3,11 +3,6 @@
 #          The final feature set is fixed in config.py (FEATURE_COLS)
 #          based on domain knowledge and BHW collectibility criteria.
 #
-# WHY THIS FILE EXISTS (against the "delete it" recommendation):
-#   This file provides the STATISTICAL EVIDENCE that supports the domain-
-#   based feature set — permutation importance, multicollinearity (VIF),
-#   and cross-referencing with SHAP global rankings.
-#
 # WHY NO AUTOMATED DROPPING:
 #   Automated feature selection (RFECV, VIF pruning, etc.) breaks the
 #   chain of reasoning between domain knowledge and model design.

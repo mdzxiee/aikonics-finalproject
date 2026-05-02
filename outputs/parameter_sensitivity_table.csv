@@ -1,31 +1,31 @@
-Parameter,Value_Tested,OOF_PR_AUC,OOF_ROC_AUC,Avg_Best_Iter,Selected
-max_depth,1.0,0.13962,0.54845,16,
-max_depth,2.0,0.15428,0.54381,14,
-max_depth,3.0,0.155,0.55028,17,
-max_depth,4.0,0.15484,0.55161,16,
-max_depth,5.0,0.16442,0.57738,11,
-max_depth,6.0,0.16995,0.55355,19,✓ YES
-learning_rate,0.01,0.1472,0.55867,7,
-learning_rate,0.03,0.15247,0.56685,9,
-learning_rate,0.05,0.155,0.55028,17,✓ YES
-learning_rate,0.08,0.14454,0.5444,32,
-learning_rate,0.1,0.14307,0.54965,18,
-learning_rate,0.15,0.1512,0.54202,37,
-min_child_weight,1.0,0.14974,0.55191,10,
-min_child_weight,3.0,0.15909,0.56049,18,
-min_child_weight,5.0,0.155,0.55028,17,
-min_child_weight,7.0,0.1555,0.55658,32,
-min_child_weight,10.0,0.16363,0.56759,21,✓ YES
-min_child_weight,15.0,0.14871,0.56117,11,
-subsample,0.5,0.16172,0.57532,5,✓ YES
-subsample,0.6,0.15493,0.55295,24,
-subsample,0.7,0.15045,0.56322,21,
-subsample,0.8,0.155,0.55028,17,
-subsample,0.9,0.15217,0.58504,9,
-subsample,1.0,0.14782,0.56116,13,
-reg_lambda,0.5,0.15311,0.55853,13,
-reg_lambda,1.0,0.1534,0.55547,17,
-reg_lambda,2.0,0.155,0.55028,17,
-reg_lambda,3.0,0.15158,0.54816,15,
-reg_lambda,5.0,0.14825,0.55679,9,
-reg_lambda,8.0,0.15519,0.5424,7,✓ YES
+Parameter,Label,Value_Tested,Is_Baseline,OOF_PR_AUC,OOF_ROC_AUC
+max_depth,Max Tree Depth,1.0,,0.13927,0.53505
+max_depth,Max Tree Depth,2.0,,0.14127,0.54076
+max_depth,Max Tree Depth,3.0,YES,0.14323,0.54101
+max_depth,Max Tree Depth,4.0,,0.14587,0.55035
+max_depth,Max Tree Depth,5.0,,0.15052,0.55471
+max_depth,Max Tree Depth,6.0,,0.14854,0.55445
+learning_rate,Learning Rate (eta),0.01,,0.14127,0.54076
+learning_rate,Learning Rate (eta),0.03,,0.13635,0.52341
+learning_rate,Learning Rate (eta),0.05,YES,0.13812,0.51692
+learning_rate,Learning Rate (eta),0.08,,0.14053,0.50867
+learning_rate,Learning Rate (eta),0.1,,0.13964,0.50864
+learning_rate,Learning Rate (eta),0.15,,0.1452,0.51924
+min_child_weight,Min Child Weight,1.0,,0.14375,0.539
+min_child_weight,Min Child Weight,3.0,,0.14356,0.53875
+min_child_weight,Min Child Weight,5.0,YES,0.14367,0.53927
+min_child_weight,Min Child Weight,7.0,,0.14462,0.5416
+min_child_weight,Min Child Weight,10.0,,0.14307,0.54005
+min_child_weight,Min Child Weight,15.0,,0.14127,0.54076
+subsample,Row Subsampling Rate,0.5,,0.1408,0.54132
+subsample,Row Subsampling Rate,0.6,,0.14238,0.54262
+subsample,Row Subsampling Rate,0.7,,0.14237,0.54414
+subsample,Row Subsampling Rate,0.8,YES,0.14127,0.54076
+subsample,Row Subsampling Rate,0.9,,0.14014,0.53876
+subsample,Row Subsampling Rate,1.0,,0.14048,0.53459
+reg_lambda,L2 Regularization (lambda),0.5,,0.1424,0.54042
+reg_lambda,L2 Regularization (lambda),1.0,,0.14199,0.54035
+reg_lambda,L2 Regularization (lambda),2.0,YES,0.14255,0.54053
+reg_lambda,L2 Regularization (lambda),3.0,,0.14171,0.54081
+reg_lambda,L2 Regularization (lambda),5.0,,0.14127,0.54076
+reg_lambda,L2 Regularization (lambda),8.0,,0.1412,0.54082

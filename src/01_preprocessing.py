@@ -1,6 +1,3 @@
-# AIKONIC — CS 322 | LBW Risk Prediction
-# File: src/01_preprocessing.py
-#
 # Purpose : Load NDHS raw data → apply validity filters → create target
 #           variable → create mother_id group key → apply structural
 #           domain-aware imputation → save preprocessed.pkl
@@ -183,15 +180,17 @@ def apply_structural_imputation(df: pd.DataFrame) -> pd.DataFrame:
     df['m1'] = df['m1'].fillna(0.0)
     print(f"  [IMPUTE] tetanus_shots → 0 for {n_tet} records with no documentation")
 
-    # birth_interval: structural zero for first-borns only
+    # birth_interval: Leave first-borns (bord==1) as NaN. 
+    # XGBoost's native Sparsity-Aware Splitting will route NaNs safely.
     n_first = (df['bord'] == 1).sum()
-    df.loc[df['bord'] == 1, 'b11'] = 0.0
+    first_born_nan = df[(df['bord'] == 1) & df['b11'].isnull()].shape[0]
+    
+    print(f"  [IMPUTE] birth_interval → Left as NaN for {first_born_nan} first-borns (XGBoost native handling)")
+    
     n_non_first_nan = df[(df['bord'] > 1) & df['b11'].isnull()].shape[0]
-    print(f"  [IMPUTE] birth_interval → 0 for {n_first} first-borns (structural zero)")
     if n_non_first_nan > 0:
-        print(f"  [IMPUTE] birth_interval NaN for non-first-borns: {n_non_first_nan} → XGBoost handles")
-    else:
-        print(f"  [IMPUTE] birth_interval: 0 non-first-borns with missing b11")
+        print(f"  [IMPUTE] birth_interval → NaN for {n_non_first_nan} non-first-borns (XGBoost handles)")
+        
     return df
 
 # 7. Drop Filter Columns and Rename 

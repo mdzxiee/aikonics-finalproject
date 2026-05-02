@@ -1,6 +1,3 @@
-# AIKONIC — CS 322 | LBW Risk Prediction
-# File: src/06_evaluation.py
-#
 # Purpose : Full model evaluation across all three data partitions (OOF /
 #           Test / Unseen) using the SAME threshold from 05, followed by a
 #           structured simulation of the Layer 2 clinical triage protocol
@@ -52,7 +49,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import (
     MODEL_PATH, THRESHOLD_PATH, OOF_PATH,
-    ARTIFACTS_DIR, OUTPUTS_DIR, CLINICAL_THRESHOLDS
+    ARTIFACTS_DIR, OUTPUTS_DIR
 )
 
 from sklearn.metrics import (
@@ -169,7 +166,8 @@ def print_metric_table(results: list) -> pd.DataFrame:
     # Compute trivial-classifier accuracy for the rejected-baseline note
     r0     = results[0]
     total0 = r0['TP'] + r0['FN_(Minimize!)'] + r0['FP'] + r0['TN']
-    triv   = round(r0['TN'] / total0 * 100, 1) if total0 > 0 else 0.0
+    total_actual_negatives = r0['TN'] + r0['FP']
+    triv   = round((total_actual_negatives / total0) * 100, 1) if total0 > 0 else 0.0
 
     print(f"\n  {'-'*72}")
     print(f"  EVALUATION RESULTS — METRIC HIERARCHY (Sections by clinical priority)")

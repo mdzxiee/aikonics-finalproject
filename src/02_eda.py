@@ -58,14 +58,15 @@ def cohens_d(group1: pd.Series, group0: pd.Series) -> float:
 
 
 def classify_variable_type(feat: str, X: pd.DataFrame) -> str:
-    """Classify feature as continuous or categorical for test selection."""
+    """Classify feature strictly by explicit definition."""
+    # Only true nominal/categorical variables go here.
     categorical = ['residence_type', 'region', 'iron_supplement', 'marital_status']
+    
+    # Even if features like tetanus_shots have <5 unique values, 
+    # they are ordinal/continuous and belong in Mann-Whitney.
     if feat in categorical:
         return 'categorical'
-    if X[feat].nunique() <= 5:
-        return 'categorical'
     return 'continuous'
-
 
 # SECTION 2 — STATISTICAL FEATURE RELEVANCE TESTS
 
@@ -117,12 +118,16 @@ def run_feature_relevance_tests(X_train: pd.DataFrame,
         if feat not in X_train.columns:
             continue
 
-        s   = X_train[feat]
+        s = X_train[feat]
         var_type = classify_variable_type(feat, X_train)
 
-        lbw_vals  = s[lbw_mask].dropna()
-        norm_vals = s[norm_mask].dropna()
-        s_filled  = s.fillna(s.median())
+        # Create valid mask to drop NaNs for this specific feature WITHOUT filling them
+        valid_mask = s.notna()
+        s_valid = s[valid_mask]
+        y_valid = y_train[valid_mask]
+        
+        lbw_vals  = s_valid[y_valid == 1]
+        norm_vals = s_valid[y_valid == 0]
 
         if var_type == 'continuous':
             # Mann-Whitney U
@@ -131,15 +136,15 @@ def run_feature_relevance_tests(X_train: pd.DataFrame,
             except Exception:
                 stat, p_mw = np.nan, np.nan
 
-            # Point-biserial correlation
+            # Point-biserial correlation (Using ONLY valid rows, NO median fill!)
             try:
-                r_pb, p_pb = pointbiserialr(s_filled, y_train)
+                r_pb, p_pb = pointbiserialr(s_valid, y_valid)
             except Exception:
                 r_pb, p_pb = np.nan, np.nan
 
-            # Individual AUC
+            # Individual AUC (Using ONLY valid rows)
             try:
-                auc = roc_auc_score(y_train, s_filled)
+                auc = roc_auc_score(y_valid, s_valid)
                 auc = max(auc, 1 - auc)   # always ≥ 0.50
             except Exception:
                 auc = np.nan
@@ -168,18 +173,17 @@ def run_feature_relevance_tests(X_train: pd.DataFrame,
             })
 
         else:  # categorical
-            # Chi-square test
+            # Chi-square test (Using ONLY valid rows)
             try:
-                ct = pd.crosstab(s_filled.round(0).astype(int), y_train)
+                ct = pd.crosstab(s_valid.round(0).astype(int), y_valid)
                 chi2, p_chi, dof, expected = chi2_contingency(ct)
-                # Cramér's V
-                n  = len(y_train)
+                n  = len(y_valid)
                 cramer_v = np.sqrt(chi2 / (n * (min(ct.shape) - 1))) if n > 0 else np.nan
             except Exception:
                 chi2, p_chi, cramer_v = np.nan, np.nan, np.nan
 
             try:
-                auc = roc_auc_score(y_train, s_filled)
+                auc = roc_auc_score(y_valid, s_valid)
                 auc = max(auc, 1 - auc)
             except Exception:
                 auc = np.nan
@@ -356,9 +360,7 @@ def plot_class_comparison(X_train: pd.DataFrame, y_train: pd.Series) -> None:
 # MAIN
 
 def run_eda() -> None:
-    print("=" * 70)
     print("STAGE 2: EDA + FEATURE RELEVANCE TESTS (TRAINING SET ONLY)")
-    print("=" * 70)
     print("\n  ⚠  Loading ONLY X_train.csv and y_train.csv")
     print("  ⚠  Test and unseen sets remain sealed throughout EDA")
 
