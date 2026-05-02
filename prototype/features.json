@@ -1,0 +1,18 @@
+{
+  "features": [
+    "maternal_age",
+    "education_yrs",
+    "wealth_score",
+    "birth_order",
+    "birth_interval",
+    "residence_type",
+    "region",
+    "anc_first_timing",
+    "iron_supplement",
+    "iron_days",
+    "tetanus_shots",
+    "marital_status",
+    "household_size"
+  ],
+  "n_features": 13
+}
