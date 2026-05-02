@@ -1,0 +1,14 @@
+Feature,PI_mean,PI_std,Rank_PI
+birth_interval,0.1255,0.0172,1
+iron_days,0.0462,0.0075,2
+wealth_score,0.0127,0.003,3
+maternal_age,0.0121,0.0039,4
+anc_first_timing,0.0088,0.0043,5
+education_yrs,0.0079,0.0029,6
+residence_type,0.0045,0.002,7
+region,0.0032,0.001,8
+tetanus_shots,0.0023,0.0007,9
+iron_supplement,0.002,0.0012,10
+marital_status,0.0,0.0,11
+household_size,0.0,0.0,12
+birth_order,-0.0001,0.0011,13

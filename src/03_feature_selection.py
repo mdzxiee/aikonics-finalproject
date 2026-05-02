@@ -33,6 +33,7 @@ from config import (
 )
 
 from sklearn.inspection import permutation_importance
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import roc_auc_score
 import joblib
 
@@ -71,17 +72,29 @@ def compute_permutation_importance(X_train: pd.DataFrame,
        print("  [SKIP] model.pkl not found — run 04_model_training.py first.")
        return pd.DataFrame()
 
+   # Load the raw model
    model = joblib.load(MODEL_PATH)
+   
+   # A custom scoring function that skips Scikit-Learn's security checks
+   def custom_auc_scorer(estimator, X_data, y_true):
+       # Extract the probabilities for class 1 (LBW)
+       y_pred_proba = estimator.predict_proba(X_data)[:, 1]
+       # Calculate the exact ROC-AUC score
+       return roc_auc_score(y_true, y_pred_proba)
+
+   # Pass the raw model and our custom scorer directly to the function
    result = permutation_importance(
        model, X_train, y_train,
        n_repeats=10, random_state=42, n_jobs=-1,
-       scoring='roc_auc'
+       scoring=custom_auc_scorer  
    )
+   
    df = pd.DataFrame({
        'Feature':   FEATURE_COLS,
        'PI_mean':   result.importances_mean.round(4),
        'PI_std':    result.importances_std.round(4),
    }).sort_values('PI_mean', ascending=False).reset_index(drop=True)
+   
    df['Rank_PI'] = range(1, len(df) + 1)
    return df
 

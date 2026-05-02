@@ -1,0 +1,14 @@
+Feature,VIF
+birth_order,2.311
+maternal_age,2.299
+wealth_score,1.745
+education_yrs,1.641
+iron_days,1.334
+birth_interval,1.241
+iron_supplement,1.166
+household_size,1.152
+residence_type,1.13
+anc_first_timing,1.092
+region,1.089
+marital_status,1.059
+tetanus_shots,1.058
