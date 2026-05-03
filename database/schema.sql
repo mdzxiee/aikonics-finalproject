@@ -2,7 +2,6 @@
 -- File: database/schema.sql
 -- Purpose: Relational database blueprint for the Prototype Web App.
 
-
 -- 1. BHW USERS
 CREATE TABLE IF NOT EXISTS bhw_users (
     bhw_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,11 +58,13 @@ CREATE TABLE IF NOT EXISTS assessments (
     height_cm REAL,
     gestational_weeks INTEGER,
 
-    -- System Outputs & Workflow Tracking
+    -- System Outputs & Workflow Tracking (UPGRADED FOR RQ3)
     ml_probability REAL NOT NULL,
     ml_risk_tier TEXT NOT NULL,
+    above_threshold INTEGER DEFAULT 0,  
     final_risk_level TEXT NOT NULL,
-    escalated INTEGER DEFAULT 0,
+    escalated INTEGER DEFAULT 0,        
+    de_escalated INTEGER DEFAULT 0,     
     shap_top_features TEXT,
     referral_recommended INTEGER DEFAULT 0,
     
@@ -82,8 +83,8 @@ CREATE TABLE IF NOT EXISTS clinical_flags (
     assessment_id INTEGER NOT NULL,
     flag_type TEXT NOT NULL,
     severity TEXT NOT NULL,
-    measured_value TEXT,     -- Changed to TEXT to allow units (e.g., "22.0 cm")
-    threshold_value TEXT,    -- Changed to TEXT to allow operators (e.g., "<23.5")
+    measured_value TEXT,     
+    threshold_value TEXT,    
     flag_message TEXT,
     FOREIGN KEY (assessment_id) REFERENCES assessments(assessment_id)
 );
@@ -122,9 +123,12 @@ SELECT
     p.full_name AS patient_name,
     p.barangay,
     b.full_name AS bhw_name,
+    a.ml_risk_tier,
+    a.above_threshold,
     a.final_risk_level,
+    a.escalated,
+    a.de_escalated,
     a.referral_recommended,
-    a.referral_completed,
     a.bp_systolic,
     a.bp_diastolic,
     a.muac_cm
