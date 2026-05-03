@@ -336,9 +336,13 @@ def apply_decision_fusion(ml_probability: float,
         final_risk_level = 'ELEVATED MONITORING'
         de_escalated     = True
 
+    elif ml_risk_tier == 'MEDIUM':
+        # 6. BUFFER ZONE: ML is below threshold but inside the 0.40 warning buffer. No clinical flags.
+        final_risk_level = 'MEDIUM RISK'
+        
     else:
-        # 6. ROUTINE: No flags, below threshold → routine monitoring
-        final_risk_level = f'{ml_risk_tier} RISK'
+        # 7. ROUTINE: ML is strictly LOW RISK and there are absolutely no clinical flags.
+        final_risk_level = 'ROUTINE MONITORING'
 
     # Build recommendations
     recommendations = _build_recommendations(
