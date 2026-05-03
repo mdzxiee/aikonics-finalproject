@@ -1,7 +1,7 @@
 {
   "project": "AIKONIC \u2014 LBW Risk Prediction",
   "model_version": "v1.0",
-  "created_at": "2026-05-03T07:47:56.797280",
+  "created_at": "2026-05-03T21:01:09.269523",
   "pipeline_stages": [
     "01_preprocessing",
     "04_model_training",
@@ -11,7 +11,7 @@
     "08_export_artifacts"
   ],
   "random_seed": 42,
-  "threshold": 0.5048012137413025,
+  "threshold": 0.5054239630699158,
   "n_features": 13,
   "feature_list": [
     "maternal_age",
@@ -36,46 +36,46 @@
   "prototype_dir": "/Users/roxannemendoza/Desktop/aikonics-finalproject/prototype",
   "performance": {
     "10-Fold CV (OOF)": {
-      "ROC_AUC": 0.5856,
-      "PR_AUC": 0.1827,
-      "Recall": 0.537,
-      "Precision": 0.1554,
-      "F1": 0.241,
-      "Referral_Rate_%": 43.8,
-      "TP": 87,
-      "FN": 75,
-      "FP": 473,
-      "TN": 645
+      "ROC_AUC": 0.5749,
+      "PR_AUC": 0.167,
+      "Recall": 0.5062,
+      "Precision": 0.1553,
+      "F1": 0.2377,
+      "Referral_Rate_%": 41.2,
+      "TP": 82,
+      "FN": 80,
+      "FP": 446,
+      "TN": 672
     },
     "Test Set": {
-      "ROC_AUC": 0.6192,
-      "PR_AUC": 0.187,
-      "Recall": 0.6176,
-      "Precision": 0.1567,
-      "F1": 0.25,
-      "Referral_Rate_%": 43.6,
-      "TP": 21,
-      "FN": 13,
-      "FP": 113,
-      "TN": 160
+      "ROC_AUC": 0.6248,
+      "PR_AUC": 0.2066,
+      "Recall": 0.5882,
+      "Precision": 0.1399,
+      "F1": 0.226,
+      "Referral_Rate_%": 46.6,
+      "TP": 20,
+      "FN": 14,
+      "FP": 123,
+      "TN": 150
     },
     "Unseen Holdout": {
-      "ROC_AUC": 0.5538,
-      "PR_AUC": 0.13,
+      "ROC_AUC": 0.5173,
+      "PR_AUC": 0.1189,
       "Recall": 0.4444,
-      "Precision": 0.1231,
-      "F1": 0.1928,
-      "Referral_Rate_%": 37.1,
+      "Precision": 0.127,
+      "F1": 0.1975,
+      "Referral_Rate_%": 36.0,
       "TP": 8,
       "FN": 10,
-      "FP": 57,
-      "TN": 100
+      "FP": 55,
+      "TN": 102
     }
   },
   "architecture_notes": {
     "layer1": "XGBClassifier (no Pipeline) with NaN handled natively",
     "layer2": "Dual-purpose: escalation (clinical danger \u2192 referral) AND de-escalation (ML-flagged + no danger \u2192 monitoring)",
-    "threshold_selection": "Recall-prioritized on OOF probabilities only. Value: 0.5048. Addresses: FN (missed LBW) costs more than FP (extra referral).",
+    "threshold_selection": "Recall-prioritized on OOF probabilities only. Value: 0.5054. Addresses: FN (missed LBW) costs more than FP (extra referral).",
     "shap": "TreeExplainer with tree_path_dependent (NaN-safe)",
     "leakage_prevention": "GroupShuffleSplit + StratifiedGroupKFold; 89 mothers with multiple records; zero overlap verified by assertion."
   },

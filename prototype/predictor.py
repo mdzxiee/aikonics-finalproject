@@ -181,7 +181,7 @@ class LBWPredictor:
         # Risk tier calculation
         if above_threshold:
             ml_tier = 'HIGH'
-        elif proba >= 0.40:  
+        elif proba >= 0.47:  
             ml_tier = 'MEDIUM'
         else:
             ml_tier = 'LOW'

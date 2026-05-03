@@ -246,43 +246,43 @@ def get_seed_records() -> list:
         },
 
         # ──────────────────────────────────────────────────────────────────
-        # CASE 3 — LOW ML RISK, CLINICALLY NORMAL → ROUTINE MONITORING
-        # Well-resourced mother, early ANC, first pregnancy, normal vitals
-        # Final expected: ROUTINE MONITORING
+        # CASE 3 — LOW ML RISK, CLINICALLY STABLE → ROUTINE MONITORING (GREEN)
+        # Demonstrates: Safe socioeconomic profile + safe vitals
         # ──────────────────────────────────────────────────────────────────
         {
             'patient': {
                 'full_name':    'Angela Reyes',
-                'barangay':     'Brgy. Addition Hills',
-                'municipality': 'Mandaluyong City',
+                'barangay':     'Brgy. San Lorenzo',
+                'municipality': 'Makati City',
             },
             'layer1': {
-                'maternal_age':     28,
-                'education_yrs':    16,     # College graduate
-                'wealth_score':     65000,  # Comfortable (p75 of PHKR82FL)
-                'birth_order':      2,      
-                'birth_interval':   36,      # Structural zero — first-born
-                'residence_type':   1,      # Urban
-                'region':           14,     # NCR
-                'anc_first_timing': 2,      # Month 2 — early ANC 
-                'iron_supplement':  1,
-                'iron_days':        180,
-                'tetanus_shots':    2,
+                'maternal_age':     28,      # Optimal age
+                'education_yrs':    16,      # College graduate
+                'wealth_score':     200000,  # Highest wealth tier (NCR)
+                'birth_order':      2,
+                'birth_interval':   36,      # Safe 3-year recovery gap
+                'residence_type':   1,       # Urban
+                'region':           14,      # NCR (High healthcare access)
+                'anc_first_timing': 2,       # Early prenatal care (Month 2)
+                'iron_supplement':  1,       
+                'iron_days':        180,     # Excellent supplement adherence
+                'tetanus_shots':    2,       
                 'marital_status':   1,
-                'household_size':   3,
+                'household_size':   4,
             },
             'layer2': {
-                'bp_systolic_r1':  110,   # Normal
+                'bp_systolic_r1':  110,   
                 'bp_diastolic_r1':  70,
-                'muac_r1':         27.0,  # Normal (above 25.0)
-                'muac_r2':         None,
-                'weight_kg':        58,
+                'muac_r1':         28.0,  
+                'muac_r2':         None,  
+                'weight_kg':        60,
                 'height_cm':       160,
                 'gestational_weeks': 20,
             },
             'expected': {
-                'ml_tier':    'LOW',
-                'escalated':  False,
+                'ml_tier':    'LOW',     
+                'escalated':  False,      
+                'de_escalated': False,     
                 'final_contains': 'ROUTINE MONITORING',
             },
         },
@@ -346,19 +346,7 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         # Layer 1: ML prediction
         ml_result = predictor.predict(rec['layer1'])
 
-        #  QA MOCK OVERRIDE FOR UI TESTING 
-        # To guarantee the dashboard has the exact visual states needed for 
-        # the thesis defense (regardless of ML probability clustering), 
-        # we explicitly set Case 1 to HIGH and Case 3 to LOW.
-        if i == 1:
-            ml_result['ml_probability']  = 0.88
-            ml_result['ml_risk_tier']    = 'HIGH'
-            ml_result['above_threshold'] = True
-        elif i == 3:
-            ml_result['ml_probability']  = 0.15
-            ml_result['ml_risk_tier']    = 'LOW'
-            ml_result['above_threshold'] = False
-
+     
         # Layer 2: Production clinical assessment (dual-purpose)
         l2 = rec['layer2']
         l2_result = run_full_clinical_assessment(

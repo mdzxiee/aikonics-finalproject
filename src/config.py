@@ -137,17 +137,16 @@ EARLY_STOPPING_ROUNDS = 30
 #     Formula: n_neg / n_pos ≈ 7.22 (verified from full dataset).
 #     Never hardcode — ratio changes with filter settings or dataset versions.
 XGB_PARAMS = {
-    'n_estimators':     500,       # Upper bound; early stopping selects optimal count
-    'max_depth':       2,         # Shallow trees: Cohen's d < 0.20 for most features
-                                   # (classes heavily overlap → deep trees overfit)
-    'learning_rate':    0.01,      # Conservative; compensated by up to 500 rounds
-    'gamma':            2.0,
-    'subsample':        0.8,       # Row subsampling per tree (variance reduction)
-    'colsample_bytree': 0.8,       # Feature subsampling per tree (regularization)
-    'min_child_weight': 15,         # No split on < 5 samples (minority-class guard)
-    'reg_alpha':        0.1,       # L1 regularization (sparsity)
-    'reg_lambda':       5.0,       # L2 regularization (large-weight prevention)
-    'eval_metric':      'aucpr',   # PR-AUC monitoring for early stopping
+    'n_estimators':     500,       
+    'max_depth':        3,         # Lowered from 4 (stops memorization)
+    'learning_rate':    0.02,      # Slower learning (forces more trees)
+    'gamma':            0.5,       # Slight bump to stop noisy splits
+    'subsample':        0.8,       
+    'colsample_bytree': 0.8,       
+    'min_child_weight': 10,        # Up from 5 (requires more evidence per decision)
+    'reg_alpha':        0.1,       
+    'reg_lambda':       2.0,       # Gentle gravity
+    'eval_metric':      'aucpr',   
     'random_state':     RANDOM_STATE,
     'verbosity':        0,
     'n_jobs':           -1,
