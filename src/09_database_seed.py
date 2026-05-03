@@ -187,7 +187,7 @@ def get_seed_records() -> list:
             'layer2': {
                 'bp_systolic_r1':  118,   # Normal — no Rule of 3 needed
                 'bp_diastolic_r1':  76,
-                'muac_r1':         24.5,  # Borderline but above 23.5 — no flag
+                'muac_r1':         26.0,  
                 'muac_r2':         None,  # Not re-measured (not triggered)
                 'weight_kg':        50,
                 'height_cm':       152,
@@ -350,6 +350,8 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
         l2 = rec['layer2']
         l2_result = run_full_clinical_assessment(
             ml_probability   = ml_result['ml_probability'],
+            above_threshold  = ml_result['above_threshold'], 
+            ml_risk_tier     = ml_result['ml_risk_tier'],    
             bp_systolic_r1   = l2.get('bp_systolic_r1'),
             bp_diastolic_r1  = l2.get('bp_diastolic_r1'),
             bp_systolic_r2   = l2.get('bp_systolic_r2'),
