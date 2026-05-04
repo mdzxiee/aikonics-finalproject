@@ -316,9 +316,7 @@ def bp_recheck():
             'trace': traceback.format_exc()
         }), 500
 
-# ===========================================================================
 # GET /api/history/<patient_id>
-# ===========================================================================
 
 @app.route('/api/history/<int:patient_id>', methods=['GET'])
 def patient_history(patient_id: int):
@@ -336,10 +334,7 @@ def patient_history(patient_id: int):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ===========================================================================
 # GET /api/assessment/<assessment_id>
-# ===========================================================================
 
 @app.route('/api/assessment/<int:assessment_id>', methods=['GET'])
 def assessment_detail(assessment_id: int):
@@ -357,10 +352,7 @@ def assessment_detail(assessment_id: int):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ===========================================================================
 # GET /api/bhws
-# ===========================================================================
 
 @app.route('/api/bhws', methods=['GET'])
 def list_bhws():
@@ -370,10 +362,7 @@ def list_bhws():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ===========================================================================
 # GET /api/stats
-# ===========================================================================
 
 @app.route('/api/stats', methods=['GET'])
 def fusion_stats():
@@ -398,10 +387,7 @@ def fusion_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ===========================================================================
 # GET /api/health
-# ===========================================================================
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -426,7 +412,9 @@ def health():
 
 # HELPER
 
-def _f(value) -> float | None:
+from typing import Optional
+
+def _f(value) -> Optional[float]:
     """Convert value to float, return None if missing/null/empty string."""
     if value is None or value == '' or value == 'null':
         return None
@@ -434,11 +422,22 @@ def _f(value) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+    
+def _build_bp_notes(layer2: dict) -> str:
+    """Safely constructs an audit trail string of all BP readings taken."""
+    notes = []
+    for r in [1, 2, 3]:
+        sbp = layer2.get(f'bp_systolic_r{r}')
+        dbp = layer2.get(f'bp_diastolic_r{r}')
+        if sbp is not None and dbp is not None:
+            notes.append(f"R{r}: {sbp}/{dbp}")
+    
+    if not notes:
+        return "No BP recorded."
+    return " | ".join(notes)
 
 
-# ===========================================================================
 # ENTRY POINT
-# ===========================================================================
 
 if __name__ == '__main__':
     print("=" * 65)
