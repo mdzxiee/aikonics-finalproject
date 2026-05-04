@@ -1,7 +1,7 @@
 {
   "project": "AIKONIC \u2014 LBW Risk Prediction",
   "model_version": "v1.0",
-  "created_at": "2026-05-03T21:01:09.269523",
+  "created_at": "2026-05-04T08:30:24.673502",
   "pipeline_stages": [
     "01_preprocessing",
     "04_model_training",

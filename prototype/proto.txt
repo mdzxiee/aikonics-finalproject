@@ -1,1 +1,0 @@
-the prototype can have app.py , predictor.py, clinical_flags.py , etc. (refer to the docs for reference)
