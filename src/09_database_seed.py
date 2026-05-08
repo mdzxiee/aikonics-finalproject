@@ -420,6 +420,12 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
 
         # Insert assessment
         shap_json = json.dumps(full_result.get('shap_top_features', []))
+        
+        # --- NEW LOGIC: GRAB THE TAGALOG RECOMMENDATIONS ---
+        recos_list = full_result.get('recommendations', []) 
+        recos_json = json.dumps(recos_list)
+        # ---------------------------------------------------
+
         cur2 = conn.execute("""
             INSERT INTO assessments (
                 patient_id, bhw_id, assessment_date,
@@ -431,9 +437,9 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
                 weight_kg, height_cm, gestational_weeks,
                 ml_probability, ml_risk_tier, above_threshold, final_risk_level,
                 escalated, de_escalated, shap_top_features,
-                referral_recommended, notes
+                referral_recommended, notes, recommendations
             ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
             )
         """, (
             patient_id, bhw_id, datetime.now().isoformat(),
@@ -465,9 +471,10 @@ def seed_assessments(conn: sqlite3.Connection, bhw_id: int) -> None:
             shap_json,
             1 if 'REFERRAL' in full_result['final_risk_level'] else 0,
             notes,
+            recos_json
         ))
         assessment_id = cur2.lastrowid
-
+        
         # Insert clinical flags
         for flag in full_result.get('clinical_flags', []):
             if flag.get('severity', 'none') == 'none':

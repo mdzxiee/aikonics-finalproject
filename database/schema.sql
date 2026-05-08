@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS assessments (
     referral_completed TEXT,
     referral_outcome TEXT,
     notes TEXT,
+    recommendations TEXT,
 
     FOREIGN KEY (patient_id) REFERENCES patients(patient_id),
     FOREIGN KEY (bhw_id) REFERENCES bhw_users(bhw_id)

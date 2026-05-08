@@ -348,6 +348,18 @@ def assessment_detail(assessment_id: int):
             return jsonify({
                 'error': f'Assessment {assessment_id} not found.'
             }), 404
+        
+        # The db sends it as a string, we turn it back into a list for the API
+        if 'assessment' in detail and 'recommendations' in detail['assessment']:
+            raw_recos = detail['assessment']['recommendations']
+            if raw_recos:
+                try:
+                    detail['assessment']['recommendations'] = json.loads(raw_recos)
+                except json.JSONDecodeError:
+                    detail['assessment']['recommendations'] = []
+            else:
+                detail['assessment']['recommendations'] = []
+
         return jsonify(detail), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
